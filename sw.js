@@ -1,7 +1,7 @@
 /* Deal Dhamaka Agent V2 — conservative offline cache.
    Keep the existing localStorage key/data untouched.
    Do not delete unrelated caches on this origin during activation. */
-const CACHE = 'deal-dhamaka-v9-cache';
+const CACHE = 'deal-dhamaka-v10-cache';
 
 const ASSETS = [
   './',
@@ -13,6 +13,7 @@ const ASSETS = [
   './analytics.js',
   './followup.js',
   './undo-redo.js',
+  './product-status.js',
   './manifest.json'
 ];
 

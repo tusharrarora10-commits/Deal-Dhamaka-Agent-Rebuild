@@ -364,7 +364,9 @@ function addProduct(x) {
     platform: "Amazon",
     link: "",
     allottedQty: 0,
-    quantityUnit: "units"
+    quantityUnit: "units",
+    dealStartDate: new Date().toISOString().slice(0,10),
+    dealEndDate: ""
   };
 
   x.brand = x.brand || x.name || "";
@@ -430,13 +432,19 @@ function addProduct(x) {
           >
         </label>
 
+        <label>Deal Start Date
+          <input name="dealStartDate" type="date" value="${esc(x.dealStartDate || "")}">
+        </label>
+        <label>Deal End Date
+          <input name="dealEndDate" type="date" value="${esc(x.dealEndDate || "")}">
+        </label>
         <label class="wide">Product Link
           <input
             name="link"
             type="url"
             required
             placeholder="https://..."
-            value="${esc(x.link || "")}"
+            value="${esc(x.link || "")}" 
           >
         </label>
       </div>
@@ -466,15 +474,22 @@ function addProduct(x) {
         platform: f.get("platform"),
         link: f.get("link").trim(),
         allottedQty,
-        quantityUnit: f.get("quantityUnit").trim() || "units"
+        quantityUnit: f.get("quantityUnit").trim() || "units",
+        dealStartDate: f.get("dealStartDate") || "",
+        dealEndDate: f.get("dealEndDate") || "",
+        createdAt: x.createdAt || new Date().toISOString()
       };
+      if (obj.dealStartDate && obj.dealEndDate && obj.dealEndDate < obj.dealStartDate) {
+        alert("Deal end date cannot be before the start date.");
+        return;
+      }
 
       const i = state.products.findIndex(p => p.id === obj.id);
 
       if (i >= 0) {
         state.products[i] = { ...state.products[i], ...obj };
       } else {
-        state.products.push(obj);
+        state.products.unshift(obj); // newest products appear first
       }
     }
   );
@@ -482,6 +497,36 @@ function addProduct(x) {
 
 $("addContact").onclick = () => addContact();
 $("addProduct").onclick = () => addProduct();
+
+function bindItemActions(type) {
+  const container = type === "contacts" ? $("contactsList") : $("productsList");
+  if (!container) return;
+  container.querySelectorAll("[data-edit]").forEach(button => {
+    button.onclick = () => {
+      const list = type === "contacts" ? state.contacts : state.products;
+      const record = list.find(x => String(x.id) === String(button.dataset.edit));
+      if (record) (type === "contacts" ? addContact : addProduct)(record);
+    };
+  });
+  container.querySelectorAll("[data-delete]").forEach(button => {
+    button.onclick = () => {
+      const id = button.dataset.delete;
+      if (type === "contacts") {
+        const contact = state.contacts.find(x => String(x.id) === String(id));
+        if (!contact || !confirm(`Delete contact “${contact.name}”? Existing history will be retained.`)) return;
+        state.contacts = state.contacts.filter(x => String(x.id) !== String(id));
+        selectedContacts.delete(String(id));
+      } else {
+        const product = state.products.find(x => String(x.id) === String(id));
+        if (!product || !confirm(`Delete product “${product.name || product.brand}”? Its old share records remain in History, but will be excluded from current reports.`)) return;
+        state.products = state.products.filter(x => String(x.id) !== String(id));
+        selectedProducts.delete(String(id));
+      }
+      save();
+      renderContacts(); renderProducts(); renderSendLists(); renderHistory(); renderTracking();
+    };
+  });
+}
 
 function renderContacts() {
   const q = $("contactSearch").value.toLowerCase();
@@ -553,6 +598,10 @@ function ensureProductDealFilter() {
   `;
 
   search.insertAdjacentElement("afterend", panel);
+  const overview = document.createElement("div");
+  overview.id = "productDealOverview";
+  overview.className = "card deal-overview";
+  panel.insertAdjacentElement("afterend", overview);
 
   panel.querySelectorAll(
     'input[name="productDealStatus"]'
@@ -569,7 +618,11 @@ function renderProducts() {
 
   const q = $("productSearch").value.toLowerCase();
 
-  const products = state.products.filter(product => {
+  const products = [...state.products].sort((a,b) => {
+    const ad = String(a.createdAt || a.dealStartDate || "");
+    const bd = String(b.createdAt || b.dealStartDate || "");
+    return bd.localeCompare(ad);
+  }).filter(product => {
     const text = (
       product.name + " " +
       product.brand + " " +
@@ -612,7 +665,8 @@ function renderProducts() {
                   : ""}
               </p>
 
-              <p>${esc(product.link)}</p>
+              <p><a href="${esc(product.link)}" target="_blank" rel="noopener">${esc(product.link)}</a></p>
+              <p><b>Deal dates:</b> ${esc(product.dealStartDate || "Not set")} → ${esc(product.dealEndDate || "No end date")}</p>
 
               <p>
                 <b>Allotted:</b>
@@ -664,6 +718,15 @@ function renderProducts() {
       : '<div class="empty">No products yet. Add one or import a CSV.</div>';
 
   bindItemActions("products");
+  const overview = $("productDealOverview");
+  if (overview) {
+    const active = state.products.filter(p => p.dealStatus !== "closed").length;
+    const closedCount = state.products.filter(p => p.dealStatus === "closed").length;
+    const ordered = state.products.reduce((n,p) => n + productTotals(p.id).ordered, 0);
+    const pending = state.products.reduce((n,p) => n + productTotals(p.id).pendingOrdered, 0);
+    const shares = state.shares.filter(s => state.products.some(p => String(p.id) === String(s.productId))).length;
+    overview.innerHTML = `<h3>Deal Overview</h3><div class="deal-overview-grid"><div><b>${active}</b><span>Active deals</span></div><div><b>${closedCount}</b><span>Closed deals</span></div><div><b>${shares}</b><span>Share attempts</span></div><div><b>${ordered}</b><span>Products ordered</span></div><div><b>${pending}</b><span>Pending orders</span></div></div>`;
+  }
 
   document.querySelectorAll("[data-deal-status]")
     .forEach(button => {
@@ -685,6 +748,8 @@ function renderProducts() {
         product.dealStatus = nextStatus;
         save();
         renderProducts();
+        renderInventoryOverview();
+        if (typeof renderAnalyticsDashboard === "function") renderAnalyticsDashboard();
       };
     });
 }
@@ -1923,9 +1988,13 @@ async function importCSV(file, type) {
               o["allotted quantity"] || o.allottedqty || 0
             ),
             quantityUnit:
-              o["quantity unit"] || o.quantityunit || "units"
+              o["quantity unit"] || o.quantityunit || "units",
+            dealStartDate: o["deal start date"] || o.dealstartdate || new Date().toISOString().slice(0,10),
+            dealEndDate: o["deal end date"] || o.dealenddate || ""
           });
 
+          const imported = state.products.pop();
+          state.products.unshift(imported);
           added++;
         }
       }

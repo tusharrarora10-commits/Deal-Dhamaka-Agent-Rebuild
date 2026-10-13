@@ -1,43 +1,21 @@
-# Deal Dhamaka Agent — Enhanced V2 (Corrected Package)
+# Deal Dhamaka Agent — corrected test build
 
-A mobile-friendly installable web app for managing contacts/products, opening personalized WhatsApp messages, and tracking share attempts.
+This build preserves the existing `dealDhamakaAgentV2` localStorage key and keeps all data on the current browser/device.
 
-## Included enhancements
-- Dashboard KPIs for active/closed deals, allotment, shares, orders, pending counts, and order conversion.
-- Share/order trend, brand and product-type rankings, status tables, recent activity, stock alerts, quick actions, and dashboard CSV export.
-- Product search plus Active Deals / Closed Deals / All Deals filters and close/reopen controls.
-- Searchable History for recipient, phone, product, brand, product type, and status.
-- Searchable multi-select Tracking filters for Brand, Product Type, and Recipient, plus order-status/date filters, counts, order toggles, and CSV export.
-- JSON backup import/export and CSV import for contacts/products.
-- Local browser storage only; no cloud sync.
-
-## Data safety
-- The app retains the existing localStorage key `dealDhamakaAgentV2` for compatibility with the V2 app.
-- Importing a JSON backup merges contacts, products, and shares by ID; it does not intentionally clear existing records.
-- Export a fresh JSON backup before deploying or importing. Do not use **Delete All Local Data** as part of an update.
-- Browser/site-data clearing and private browsing can erase local records. Keep a copy of your JSON backup in Files/iCloud Drive.
-- The service worker uses a new cache name and does not delete other caches on the same origin.
+## Included fixes
+- Restores working Edit, Delete, Close Deal and Reopen Deal actions for products and working Edit/Delete actions for contacts.
+- Adds a Deal Overview panel to the Products tab.
+- Keeps the compact seven-tab iPhone navigation and blue/green/navy color palette.
+- Adds Deal Start Date and Deal End Date fields to product create/edit forms and product cards; validates end date is not earlier than start date.
+- Adds new products to the top of the Products list.
+- Current reports resolve brand/product type from the current product record and exclude share records linked to deleted products from live reports. History is retained.
+- Adds per-tab Undo/Redo for local data changes (up to 80 states). This cannot undo a WhatsApp message after it has been sent.
+- Bumps the service-worker cache version to avoid serving stale CSS/JavaScript.
 
 ## Deploy safely
-1. Keep a fresh JSON export in a safe location.
-2. Deploy this package to a separate Vercel Preview project/deployment first if you need the current production URL to remain untouched.
-3. Test the preview with a copy of your JSON backup. Check dashboard, product status, History search, Tracking filters, and JSON export/import.
-4. Only update the existing production deployment when you deliberately choose to replace its live code. Deploying to the existing V2 project can change the live website even though it does not directly delete localStorage.
+1. Keep the JSON backup before replacing files.
+2. Upload all files in this ZIP to the root of the **test branch** first, replacing files with matching names.
+3. Test adding/editing/deleting a contact and product, closing/reopening a deal, changing a product type, date fields, reports, and Undo/Redo on iPhone.
+4. Only promote to production after the preview passes.
 
-## Run locally
-Serve this folder over HTTP or deploy it to a static host. Opening `index.html` directly may limit service-worker/PWA features.
-
-## CSV headers
-Contacts: `name,phone,category` (phone should include country code).
-Products: `name,brand,productType,description,price,platform,link,allottedQty,quantityUnit,dealStatus`.
-
-## Tracking meaning
-A record is saved when the app opens the corresponding WhatsApp link. This records a share attempt / WhatsApp opened, not confirmed sent, delivered, read, or purchased. The user must still tap Send in WhatsApp.
-
-
-## Product report fixes and Undo/Redo
-
-- Tracking and dashboard reports resolve current brand and product-type names from the current product record.
-- Share records whose referenced product was deleted are excluded from current inventory/report calculations; records remain in History.
-- Undo/Redo controls are added to each app tab for saved local-data changes (up to 80 steps). They cannot undo a WhatsApp message that was already sent.
-- The local-storage key remains `dealDhamakaAgentV2`; export a JSON backup before replacing app files.
+No browser/device end-to-end test has been performed in this environment. Static JavaScript syntax checks are performed before packaging.

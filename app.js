@@ -483,6 +483,49 @@ function addProduct(x) {
 $("addContact").onclick = () => addContact();
 $("addProduct").onclick = () => addProduct();
 
+function bindItemActions(type) {
+  const container = type === "contacts" ? $("contactsList") : $("productsList");
+  if (!container) return;
+
+  container.querySelectorAll("[data-edit]").forEach(button => {
+    button.onclick = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const id = button.dataset.edit;
+      if (type === "contacts") {
+        const contact = state.contacts.find(item => String(item.id) === String(id));
+        if (contact) addContact(contact);
+      } else {
+        const product = state.products.find(item => String(item.id) === String(id));
+        if (product) addProduct(product);
+      }
+    };
+  });
+
+  container.querySelectorAll("[data-delete]").forEach(button => {
+    button.onclick = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const id = button.dataset.delete;
+      if (type === "contacts") {
+        const contact = state.contacts.find(item => String(item.id) === String(id));
+        if (!contact) return;
+        if (!confirm(`Delete contact "${contact.name}"? Existing history records will be retained.`)) return;
+        state.contacts = state.contacts.filter(item => String(item.id) !== String(id));
+      } else {
+        const product = state.products.find(item => String(item.id) === String(id));
+        if (!product) return;
+        if (!confirm(`Delete product "${product.name || product.brand}"? Existing history records will be retained.`)) return;
+        state.products = state.products.filter(item => String(item.id) !== String(id));
+      }
+      save();
+      if (type === "contacts") renderContacts();
+      else renderProducts();
+      updateStats();
+    };
+  });
+}
+
 function renderContacts() {
   const q = $("contactSearch").value.toLowerCase();
 
@@ -564,8 +607,51 @@ function ensureProductDealFilter() {
   });
 }
 
+function renderProductDealOverview() {
+  const list = $("productsList");
+  if (!list) return;
+
+  let panel = $("productDealOverview");
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.id = "productDealOverview";
+    panel.className = "product-overview card";
+    list.parentNode.insertBefore(panel, list);
+  }
+
+  const active = state.products.filter(p => p.dealStatus !== "closed").length;
+  const closed = state.products.length - active;
+  const ordered = state.shares.filter(s => !!s.ordered).length;
+  const pending = Math.max(0, state.shares.length - ordered);
+  const available = state.products.reduce((sum, p) => sum + productTotals(p.id).available, 0);
+
+  panel.innerHTML = `
+    <div class="product-overview-heading">
+      <div><span class="product-overview-kicker">DEAL DHAMAKA</span><h3>Deal overview</h3></div>
+      <span class="overview-pill">${active} active</span>
+    </div>
+    <div class="product-overview-grid">
+      <div class="overview-metric"><span>Active deals</span><strong>${active}</strong><small>Ready to share</small></div>
+      <div class="overview-metric"><span>Closed deals</span><strong>${closed}</strong><small>Not available to send</small></div>
+      <div class="overview-metric"><span>Share attempts</span><strong>${state.shares.length}</strong><small>Recorded shares</small></div>
+      <div class="overview-metric"><span>Products ordered</span><strong>${ordered}</strong><small>Marked ordered</small></div>
+      <div class="overview-metric"><span>Pending orders</span><strong>${pending}</strong><small>Awaiting confirmation</small></div>
+      <div class="overview-metric"><span>Available stock</span><strong>${formatQuantity(available)}</strong><small>Units across all deals</small></div>
+    </div>
+    <div class="product-overview-summary">
+      <div class="overview-summary-line"><span>📦</span><span><strong>${active}</strong> active deals available</span></div>
+      <div class="overview-summary-line"><span>✅</span><span><strong>${ordered}</strong> records marked ordered</span></div>
+      <div class="overview-summary-line"><span>⌛</span><span><strong>${pending}</strong> records still pending</span></div>
+      <button type="button" class="overview-tracking-button" id="openProductTracking">Open tracking dashboard <span>→</span></button>
+    </div>`;
+
+  const trackingButton = $("openProductTracking");
+  if (trackingButton) trackingButton.onclick = () => showPage("tracking");
+}
+
 function renderProducts() {
   ensureProductDealFilter();
+  renderProductDealOverview();
 
   const q = $("productSearch").value.toLowerCase();
 

@@ -112,10 +112,31 @@
   function readData() {
     try {
       const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      const products = Array.isArray(raw.products) ? raw.products : [];
+      const storedShares = Array.isArray(raw.shares) ? raw.shares : [];
+      const shares = storedShares.map(record => {
+        const product = record.productId == null
+          ? products.find(p =>
+              String(p.name || p.brand || "").trim() ===
+                String(record.productName || record.brand || "").trim() &&
+              String(p.productType || "").trim() ===
+                String(record.productType || "").trim()
+            )
+          : products.find(p => String(p.id) === String(record.productId));
+
+        if (record.productId != null && !product) return null;
+        return product ? {
+          ...record,
+          brand: product.brand || product.name || "",
+          productType: product.productType || "",
+          productName: product.name || product.brand || ""
+        } : record;
+      }).filter(Boolean);
+
       return {
         contacts: Array.isArray(raw.contacts) ? raw.contacts : [],
-        products: Array.isArray(raw.products) ? raw.products : [],
-        shares: Array.isArray(raw.shares) ? raw.shares : []
+        products,
+        shares
       };
     } catch (_) {
       return { contacts: [], products: [], shares: [] };

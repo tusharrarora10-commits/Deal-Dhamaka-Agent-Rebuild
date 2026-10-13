@@ -33,3 +33,11 @@ Products: `name,brand,productType,description,price,platform,link,allottedQty,qu
 
 ## Tracking meaning
 A record is saved when the app opens the corresponding WhatsApp link. This records a share attempt / WhatsApp opened, not confirmed sent, delivered, read, or purchased. The user must still tap Send in WhatsApp.
+
+
+## Product report fixes and Undo/Redo
+
+- Tracking and dashboard reports resolve current brand and product-type names from the current product record.
+- Share records whose referenced product was deleted are excluded from current inventory/report calculations; records remain in History.
+- Undo/Redo controls are added to each app tab for saved local-data changes (up to 80 steps). They cannot undo a WhatsApp message that was already sent.
+- The local-storage key remains `dealDhamakaAgentV2`; export a JSON backup before replacing app files.

@@ -1,686 +1,247 @@
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Deal Dhamaka Agent</title>
-<style>
-:root{--ink:#111827;--muted:#667085;--bg:#f3f5f9;--line:#e2e8f0;--blue:#356df3;--green:#16803c;--red:#b42318}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:100px}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-header{background:linear-gradient(135deg,#111827,#243b70);color:white;padding:18px 16px}
-header h1{margin:0;font-size:22px}
-header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
-main{max-width:850px;margin:auto;padding:12px}
-.page{display:none}.page.active{display:block}
-.heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 14px}
-.heading h2{font-size:22px;margin:0}
-.card,.item{background:white;border:1px solid var(--line);border-radius:17px;padding:15px;margin:10px 0;box-shadow:0 4px 15px #11182705}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-.stat{background:white;border:1px solid var(--line);border-radius:15px;padding:14px}
-.stat .label{font-size:12px;color:var(--muted)}
-.stat strong{display:block;font-size:26px;margin-top:4px}
-.stat .hint{font-size:11px;color:var(--muted)}
-.btn{border:0;border-radius:11px;padding:11px 13px;background:var(--ink);color:white;font-weight:750}
-.btn.blue{background:var(--blue)}.btn.green{background:var(--green)}
-.btn.light{background:#edf2ff;color:#2456c7}.btn.red{background:#fee4e2;color:var(--red)}
-.btn.small{padding:8px 10px;font-size:12px}
-.btn.full{width:100%}
-input,select,textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:11px;background:white;color:var(--ink);min-width:0}
-textarea{min-height:105px;resize:vertical}
-label{display:block;font-size:13px;font-weight:750;margin:10px 0 5px}
-.search{margin:5px 0 10px}
-.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:0}
-.filterbox{background:white;border:1px solid var(--line);border-radius:13px;padding:10px;margin:10px 0}
-.radios{display:flex;gap:12px;flex-wrap:wrap}
-.radios label{display:flex;align-items:center;gap:5px;margin:2px 0;font-size:12px}
-.radios input{width:auto}
-.item{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.itemmain{flex:1;min-width:0}
-.item h3{font-size:16px;margin:0 0 5px;overflow-wrap:anywhere}
-.item p{font-size:12px;color:var(--muted);margin:4px 0;overflow-wrap:anywhere}
-.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.badge{display:inline-block;background:#eaf7ee;color:#176b35;border-radius:20px;padding:4px 8px;font-size:11px;font-weight:800}
-.badge.closed{background:#fff0df;color:#8a4b00}
-.muted{color:var(--muted)}.tiny{font-size:12px}
-.notice{background:#ecfdf3;color:#176b35;padding:12px;border-radius:12px;margin:10px 0;font-size:13px}
-.warning{background:#fff7e6;color:#805600;padding:12px;border-radius:12px;margin:10px 0;font-size:13px}
-.empty{text-align:center;color:var(--muted);padding:25px}
-.list{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:white}
-.checkrow{display:flex;align-items:center;gap:10px;padding:11px;border-bottom:1px solid var(--line);margin:0;font-size:13px}
-.checkrow input{width:19px;height:19px;flex-shrink:0}
-.nav{position:fixed;z-index:20;bottom:0;left:0;right:0;display:flex;background:white;border-top:1px solid var(--line);padding:6px 2px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -5px 20px #1118270c}
-.nav button{flex:1;border:0;background:transparent;color:#667085;font-size:10px;font-weight:750;padding:6px 0;min-width:0}
-.nav button span{display:block;font-size:19px;margin-bottom:3px}
-.nav button.active{color:var(--blue)}
-hr{border:0;border-top:1px solid var(--line);margin:12px 0}
-@media(min-width:650px){main{padding:22px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.nav{left:50%;transform:translateX(-50%);max-width:700px;border:1px solid var(--line);border-radius:16px 16px 0 0}}
-</style>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<header>
-  <h1>🎁 Deal Dhamaka Agent</h1>
-  <p>Manage deals · Share on WhatsApp · Track orders</p>
+<header class="topbar">
+  <div>
+    <div class="eyebrow">DEAL DHAMAKA</div>
+    <h1>WhatsApp Agent</h1>
+  </div>
+  <button id="installBtn" class="iconbtn" hidden>＋</button>
 </header>
 
 <main>
-<section class="page active" id="page-home">
-  <div class="heading">
-    <h2>Dashboard</h2>
-    <button class="btn small light" onclick="go('settings')">Backup</button>
+<section id="dashboard" class="page active">
+  <div class="hero">
+    <h2>Share deals. Track everything.</h2>
+    <p>Manage products and contacts, share through WhatsApp, and see brand-wise and recipient-wise results.</p>
   </div>
-  <div class="grid" id="dashboardStats"></div>
+  <div class="stats">
+    <div class="stat"><b id="contactCount">0</b><span>Contacts</span></div>
+    <div class="stat"><b id="productCount">0</b><span>Products</span></div>
+    <div class="stat"><b id="sentCount">0</b><span>Share Attempts</span></div>
+  </div>
+  <button class="primary big" data-page="send">Send a Deal →</button>
+  <button class="secondary full" data-page="tracking">Open Tracking Dashboard</button>
   <div class="card">
-    <h3 style="margin-top:0">Quick actions</h3>
-    <div class="row">
-      <button class="btn" onclick="openContact()">＋ Contact</button>
-      <button class="btn blue" onclick="openProduct()">＋ Product</button>
-      <button class="btn green" onclick="go('send')">Share deals</button>
-    </div>
+    <h3>How it works</h3>
+    <ol>
+      <li>Add contacts and products.</li>
+      <li>Enter brand and product type for each product.</li>
+      <li>Select recipients and products.</li>
+      <li>Open each WhatsApp chat and tap Send.</li>
+      <li>Review share-attempt counts in Tracking.</li>
+    </ol>
   </div>
-  <div class="card">
-    <h3 style="margin-top:0">Deal overview</h3>
-    <div id="dashboardOverview"></div>
-  </div>
-  <div id="homeAlert"></div>
 </section>
 
-<section class="page" id="page-contacts">
-  <div class="heading"><h2>Contacts</h2><button class="btn" onclick="openContact()">＋ Add</button></div>
-  <input id="contactSearch" class="search" placeholder="Search contact name or number" oninput="renderContacts()">
+<section id="contacts" class="page">
+  <div class="sectionhead">
+    <div><h2>Contacts</h2><p>Names and WhatsApp numbers</p></div>
+    <button class="primary" id="addContact">＋ Add</button>
+  </div>
+  <input id="contactSearch" class="search" placeholder="Search name or number">
   <div id="contactsList"></div>
 </section>
 
-<section class="page" id="page-products">
-  <div class="heading"><h2>Products & Deals</h2><button class="btn" onclick="openProduct()">＋ Add</button></div>
-  <input id="productSearch" class="search" placeholder="Search brand, type or link" oninput="renderProducts()">
-  <div class="filterbox">
-    <div class="radios">
-      <label><input type="radio" name="dealFilter" value="active" checked onchange="setDealFilter(this.value)"> Active</label>
-      <label><input type="radio" name="dealFilter" value="closed" onchange="setDealFilter(this.value)"> Closed</label>
-      <label><input type="radio" name="dealFilter" value="all" onchange="setDealFilter(this.value)"> All deals</label>
-    </div>
+<section id="products" class="page">
+  <div class="sectionhead">
+    <div><h2>Products</h2><p>Deals, brands, product types and links</p></div>
+    <button class="primary" id="addProduct">＋ Add</button>
   </div>
+  <input id="productSearch" class="search" placeholder="Search product, brand or type">
   <div id="productsList"></div>
 </section>
 
-<section class="page" id="page-send">
-  <div class="heading"><h2>Send WhatsApp</h2></div>
+<section id="send" class="page">
+  <div class="sectionhead">
+    <div><h2>Send WhatsApp</h2><p>Choose multiple contacts and products</p></div>
+  </div>
   <div class="card">
-    <label>1. Select contacts</label>
-    <input id="sendContactSearch" placeholder="Search recipient name" oninput="renderSendChoices()">
-    <div class="row" style="margin:8px 0">
-      <button class="btn small light" onclick="selectAll('sendContacts',true)">Select all contacts</button>
-      <button class="btn small light" onclick="selectAll('sendContacts',false)">Clear</button>
+    <div class="selection-head">
+      <h3>Select Contacts</h3>
+      <div>
+        <button class="mini" id="allContacts">All</button>
+        <button class="mini" id="clearContacts">Clear</button>
+      </div>
     </div>
-    <div id="sendContacts" class="list"></div>
-
-    <label>2. Select active products</label>
-    <input id="sendProductSearch" placeholder="Search brand or product type" oninput="renderSendChoices()">
-    <div class="row" style="margin:8px 0">
-      <button class="btn small light" onclick="selectAll('sendProducts',true)">Select all products</button>
-      <button class="btn small light" onclick="selectAll('sendProducts',false)">Clear</button>
+    <input id="sendContactSearch" class="search" placeholder="Find contact">
+    <div id="sendContacts" class="checklist"></div>
+  </div>
+  <div class="card">
+    <div class="selection-head">
+      <h3>Select Products</h3>
+      <div>
+        <button class="mini" id="allProducts">All</button>
+        <button class="mini" id="clearProducts">Clear</button>
+      </div>
     </div>
-    <div id="sendProducts" class="list"></div>
-
-    <label>3. Message template</label>
-    <select id="templateChoice" onchange="chooseTemplate()">
-      <option value="free">Free Deal</option>
-      <option value="short">Short Deal</option>
-      <option value="link">Simple Product Link</option>
-    </select>
-    <textarea id="messageTemplate">Something FREE is waiting for you! 🎁
-
-Hi {{User Name}},
-
-{{Brand Name}} has an exciting deal for you!
-{{Product Description}}
-
-{{Product Link}}
-
-Deal Dhamaka — Happy Shopping!</textarea>
-    <p class="tiny muted">Available placeholders: {{User Name}}, {{Brand Name}}, {{Product Description}}, {{Product Link}}, {{Price}}, {{Platform}}, {{Product Type}}</p>
-    <button class="btn green full" onclick="startSending()">Prepare WhatsApp messages</button>
-    <p class="tiny muted">WhatsApp opens with a prepared message. You must review and tap Send in WhatsApp yourself.</p>
-    <div id="sendResult"></div>
+    <input id="sendProductSearch" class="search" placeholder="Find product">
+    <div id="sendProducts" class="checklist"></div>
+  </div>
+  <div class="card">
+    <h3>Message Preview</h3>
+    <label>Message
+      <textarea id="message" rows="9" placeholder="Select one contact and one product to preview a message"></textarea>
+    </label>
+    <p class="hint">For bulk sharing, the app opens one WhatsApp chat at a time. You must tap Send in WhatsApp, then return here and tap the next button.</p>
+    <div id="batchInfo" class="notice">Select contacts and products to begin.</div>
+    <button id="openNext" class="whatsapp big" disabled>Open Next WhatsApp</button>
+    <button id="resetBatch" class="secondary full">Reset Selection</button>
   </div>
 </section>
 
-<section class="page" id="page-history">
-  <div class="heading">
-    <h2>Share History</h2>
-    <button class="btn small light" onclick="exportCSV()">Export CSV</button>
+<section id="history" class="page">
+  <div class="sectionhead">
+    <div><h2>History</h2><p>Share attempts initiated from this app</p></div>
+    <button class="danger" id="clearHistory">Clear</button>
   </div>
-  <input id="historyNameSearch" class="search" placeholder="Search recipient name" oninput="renderHistory()">
-  <input id="historySearch" class="search" placeholder="Search brand, product type or number" oninput="renderHistory()">
-  <div id="historyCount" class="tiny muted"></div>
+  <input id="historySearch" class="search" placeholder="Search recipient name, product or brand" autocomplete="off">
   <div id="historyList"></div>
 </section>
 
-<section class="page" id="page-tracking">
-  <div class="heading">
-    <h2>Tracking Dashboard</h2>
-    <button class="btn small light" onclick="exportCSV()">Export CSV</button>
+<section id="tracking" class="page">
+  <div class="sectionhead">
+    <div><h2>Tracking</h2><p>Brand, product type, recipient, order status and date-wise counts</p></div>
+    <button class="secondary" id="refreshTracking">Refresh</button>
   </div>
-  <div class="grid" id="trackingStats"></div>
-  <div class="card">
-    <h3 style="margin-top:0">Filter your records</h3>
+
+  <div class="stats four">
+    <div class="stat"><b id="trackTotal">0</b><span>Total Shares</span></div>
+    <div class="stat"><b id="trackBrands">0</b><span>Brands</span></div>
+    <div class="stat"><b id="trackTypes">0</b><span>Product Types</span></div>
+    <div class="stat"><b id="trackRecipients">0</b><span>Recipients</span></div>
+  </div>
+
+  <div class="card tracking-filter-card">
+    <h3>Filters</h3>
+
     <label>Brand</label>
-    <select id="trackingBrand" onchange="renderHistory()"><option value="">All brands</option></select>
-    <label>Product type</label>
-    <select id="trackingType" onchange="renderHistory()"><option value="">All product types</option></select>
-    <label>Recipient — searchable</label>
-    <input id="trackingRecipient" placeholder="Type recipient name" oninput="renderHistory()">
-    <div class="row">
-      <div><label>From date</label><input type="date" id="trackingFrom" onchange="renderHistory()"></div>
-      <div><label>To date</label><input type="date" id="trackingTo" onchange="renderHistory()"></div>
-    </div>
-    <label>Order status</label>
-    <select id="trackingStatus" onchange="renderHistory()">
-      <option value="all">All orders & pending</option>
-      <option value="ordered">Ordered only</option>
-      <option value="pending">Pending only</option>
+    <details class="multi-filter">
+      <summary>
+        <span id="brandFilterSummary">All Brands</span>
+        <span class="dropdown-arrow">▾</span>
+      </summary>
+      <div id="filterBrand" class="filter-options"></div>
+    </details>
+
+    <label>Product Type</label>
+    <details class="multi-filter">
+      <summary>
+        <span id="typeFilterSummary">All Product Types</span>
+        <span class="dropdown-arrow">▾</span>
+      </summary>
+      <div id="filterType" class="filter-options"></div>
+    </details>
+
+    <label>Recipient</label>
+    <details class="multi-filter">
+      <summary>
+        <span id="recipientFilterSummary">All Recipients</span>
+        <span class="dropdown-arrow">▾</span>
+      </summary>
+      <div id="filterRecipient" class="filter-options"></div>
+    </details>
+
+    <label>Order Status</label>
+    <select id="filterOrderStatus">
+      <option value="all">All Orders &amp; Pending</option>
+      <option value="ordered">Ordered Only</option>
+      <option value="pending">Pending Only</option>
     </select>
-    <button class="btn light full" style="margin-top:12px" onclick="clearTrackingFilters()">Clear filters</button>
-    <p id="trackingResultCount" class="tiny muted"></p>
+
+    <label>From date</label>
+    <input type="date" id="filterFrom">
+
+    <label>To date</label>
+    <input type="date" id="filterTo">
+
+    <button id="clearFilters" class="secondary full">Clear Filters</button>
   </div>
+
   <div class="card">
-    <h3 style="margin-top:0">Share records</h3>
-    <div id="trackingList"></div>
+    <h3>Brand-wise Count</h3>
+    <div id="brandCounts" class="report"></div>
+  </div>
+
+  <div class="card">
+    <h3>Product Type-wise Count</h3>
+    <div id="typeCounts" class="report"></div>
+  </div>
+
+  <div class="card">
+    <h3>Brand + Product Type</h3>
+    <div id="comboCounts" class="report"></div>
+  </div>
+
+  <div class="card">
+    <h3>Recipient-wise Count</h3>
+    <div id="recipientCounts" class="report"></div>
+  </div>
+
+  <div class="card">
+    <h3>Recipient Details</h3>
+    <div id="trackingDetails" class="report"></div>
+    <button id="exportTrackingCsv" class="secondary full">Export Tracking CSV</button>
   </div>
 </section>
 
-<section class="page" id="page-settings">
-  <div class="heading"><h2>Settings & Backup</h2></div>
-  <div class="card">
-    <h3 style="margin-top:0">JSON backup</h3>
-    <p class="tiny muted">Export your data regularly. Import your previous app's JSON backup here. This app uses separate local storage and will not erase your old app's data.</p>
-    <button class="btn full" onclick="exportJSON()">Export full backup (JSON)</button>
-    <label>Import existing JSON backup</label>
-    <input type="file" id="jsonFile" accept=".json,application/json" onchange="restoreJSON(event)">
-    <div id="backupMsg"></div>
+<section id="settings" class="page">
+  <div class="sectionhead">
+    <div><h2>Data &amp; Settings</h2><p>Backup your local data</p></div>
   </div>
   <div class="card">
-    <h3 style="margin-top:0">Import CSV</h3>
-    <p class="tiny muted">Contacts columns: name, phone, notes.</p>
-    <button class="btn light full" onclick="downloadTemplate('contacts')">Download contacts CSV template</button>
-    <p class="tiny muted">Products columns: brand, productType, description, price, platform, link, allottedQty, quantityUnit, dealStatus.</p>
-    <button class="btn light full" onclick="downloadTemplate('products')">Download products CSV template</button>
-    <label>Choose CSV file</label>
-    <input type="file" id="csvFile" accept=".csv,text/csv">
-    <div class="row" style="margin-top:10px">
-      <button class="btn" onclick="importCSV('contacts')">Import contacts</button>
-      <button class="btn" onclick="importCSV('products')">Import products</button>
-    </div>
-    <div id="csvMsg"></div>
-  </div>
-  <div class="card">
-    <h3 style="margin-top:0">Data storage</h3>
-    <p class="tiny muted">Data is saved in this browser on this device only. Private browsing or clearing website data can remove it. JSON backups are recommended.</p>
-    <button class="btn red full" onclick="resetLocal()">Delete data in this new app</button>
+    <button class="secondary full" id="exportData">Export Full Backup (JSON)</button>
+    <label class="filelabel">Import Backup (JSON)
+      <input type="file" id="importData" accept=".json,application/json">
+    </label>
+    <button class="secondary full" id="importCsvContacts">Import Contacts CSV</button>
+    <input type="file" id="contactsCsv" accept=".csv,text/csv" hidden>
+    <button class="secondary full" id="importCsvProducts">Import Products CSV</button>
+    <input type="file" id="productsCsv" accept=".csv,text/csv" hidden>
+    <p class="hint">Data is stored on this device/browser. Export backups regularly. Private browsing or clearing website data may erase it.</p>
+    <button class="danger full" id="resetData">Delete All Local Data</button>
   </div>
 </section>
 </main>
 
-<nav class="nav">
-  <button class="active" data-page="home" onclick="go('home')"><span>⌂</span>Home</button>
-  <button data-page="contacts" onclick="go('contacts')"><span>♙</span>Contacts</button>
-  <button data-page="products" onclick="go('products')"><span>▣</span>Products</button>
-  <button data-page="send" onclick="go('send')"><span>↗</span>Send</button>
-  <button data-page="history" onclick="go('history')"><span>◷</span>History</button>
-  <button data-page="settings" onclick="go('settings')"><span>⚙</span>Settings</button>
-  <button data-page="tracking" onclick="go('tracking')"><span>▥</span>Tracking</button>
+<nav class="tabbar">
+  <button data-page="dashboard">⌂<span>Home</span></button>
+  <button data-page="contacts">♙<span>Contacts</span></button>
+  <button data-page="products">▣<span>Products</span></button>
+  <button data-page="send">↗<span>Send</span></button>
+  <button data-page="history">◷<span>History</span></button>
+  <button data-page="settings">⚙<span>Settings</span></button>
+  <button data-page="tracking">📊<span>Tracking</span></button>
 </nav>
 
-<script>
-"use strict";
+<div id="modal" class="modal" hidden>
+  <div class="modalbox">
+    <div class="modalhead">
+      <h3 id="modalTitle"></h3>
+      <button id="closeModal" type="button">×</button>
+    </div>
+    <form id="modalForm"></form>
+  </div>
+</div>
 
-const STORAGE_KEY = "dealDhamakaRebuildLocalV1";
-const $ = id => document.getElementById(id);
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-}[c]));
-const fmtDate = v => {
-  if (!v) return "Date unavailable";
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleString();
-};
-
-let data = {contacts:[], products:[], shares:[]};
-let preparedMessages = [];
-let dealFilter = "active";
-
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      data = {
-        contacts:Array.isArray(parsed.contacts) ? parsed.contacts : [],
-        products:Array.isArray(parsed.products) ? parsed.products : [],
-        shares:Array.isArray(parsed.shares) ? parsed.shares : []
-      };
-    }
-  } catch (e) {
-    alert("Could not read this app's saved data. Import a JSON backup if needed.");
-  }
-  normaliseData();
-  renderAll();
-}
-
-function save() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    alert("Could not save data. Export a backup and check browser storage.");
-  }
-}
-
-function normaliseData() {
-  data.contacts = data.contacts.map(c => ({
-    ...c, id:String(c.id ?? uid()),
-    name:String(c.name ?? c.contactName ?? ""),
-    phone:String(c.phone ?? c.whatsapp ?? c.number ?? "")
-  }));
-  data.products = data.products.map(p => ({
-    ...p, id:String(p.id ?? uid()),
-    brand:String(p.brand ?? p.brandName ?? p.name ?? ""),
-    name:String(p.name ?? p.brand ?? ""),
-    productType:String(p.productType ?? p.type ?? ""),
-    description:String(p.description ?? ""),
-    price:String(p.price ?? ""),
-    platform:String(p.platform ?? "Amazon"),
-    link:String(p.link ?? p.productLink ?? p.url ?? ""),
-    allottedQty:Math.max(0, Number(p.allottedQty ?? p.allotted ?? p.quantity ?? 0) || 0),
-    quantityUnit:String(p.quantityUnit ?? "units"),
-    dealStatus:p.dealStatus === "closed" ? "closed" : "active"
-  }));
-  data.shares = data.shares.map(s => ({
-    ...s, id:String(s.id ?? uid()),
-    contactName:String(s.contactName ?? s.name ?? ""),
-    phone:String(s.phone ?? ""),
-    brand:String(s.brand ?? s.brandName ?? ""),
-    productType:String(s.productType ?? s.type ?? ""),
-    platform:String(s.platform ?? ""),
-    message:String(s.message ?? ""),
-    createdAt:s.createdAt ?? s.date ?? new Date().toISOString(),
-    status:(s.status === "ordered" || s.ordered === true || s.productOrdered === true) ? "ordered" : "pending"
-  }));
-}
-
-function go(page) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.page === page));
-  $("page-" + page).classList.add("active");
-  if (page === "history" || page === "tracking") renderHistory();
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-
-function renderDashboard() {
-  const ordered = data.shares.filter(s => s.status === "ordered").length;
-  const pending = data.shares.length - ordered;
-  const active = data.products.filter(p => p.dealStatus !== "closed").length;
-  const closed = data.products.filter(p => p.dealStatus === "closed").length;
-  const stats = [
-    ["Contacts",data.contacts.length,"Saved recipients"],
-    ["Active deals",active,"Ready to share"],
-    ["Closed deals",closed,"Not available to send"],
-    ["Share attempts",data.shares.length,"Recorded shares"],
-    ["Products ordered",ordered,"Marked ordered"],
-    ["Pending orders",pending,"Awaiting confirmation"]
-  ];
-  $("dashboardStats").innerHTML = stats.map(s =>
-    `<div class="stat"><div class="label">${s[0]}</div><strong>${s[1]}</strong><div class="hint">${s[2]}</div></div>`
-  ).join("");
-  $("dashboardOverview").innerHTML =
-    `<p>📦 <b>${active}</b> active deals available</p>
-     <p>✅ <b>${ordered}</b> records marked ordered</p>
-     <p>⏳ <b>${pending}</b> records still pending</p>
-     <button class="btn light full" onclick="go('tracking')">Open tracking dashboard →</button>`;
-  $("homeAlert").innerHTML = (!data.contacts.length || !data.products.length)
-    ? `<div class="warning">Start by adding contacts and products, or import your previous JSON backup from Settings.</div>`
-    : "";
-}
-
-function renderContacts() {
-  const q = ($("contactSearch")?.value || "").toLowerCase().trim();
-  const rows = data.contacts.filter(c => (c.name+" "+c.phone).toLowerCase().includes(q));
-  $("contactsList").innerHTML = rows.length ? rows.map(c => `
-    <article class="item">
-      <div class="itemmain"><h3>${esc(c.name)}</h3><p>WhatsApp: ${esc(c.phone)}</p><p>${esc(c.notes || "")}</p></div>
-      <div class="actions">
-        <button class="btn small light" onclick="editContact('${c.id}')">Edit</button>
-        <button class="btn small red" onclick="deleteContact('${c.id}')">Delete</button>
-      </div>
-    </article>`).join("") : `<div class="empty">No contacts found.</div>`;
-}
-
-function openContact(id) {
-  const c = id ? data.contacts.find(x => x.id === id) : {};
-  const name = prompt("Contact name:", c?.name || "");
-  if (name === null) return;
-  if (!name.trim()) return alert("Please enter a name.");
-  const phone = prompt("WhatsApp number with country code:", c?.phone || "+91");
-  if (phone === null) return;
-  if (!phone.replace(/\D/g,"")) return alert("Please enter a valid phone number.");
-  const notes = prompt("Notes (optional):", c?.notes || "") ?? c?.notes ?? "";
-  if (id) Object.assign(c,{name:name.trim(),phone:phone.trim(),notes});
-  else data.contacts.push({id:uid(),name:name.trim(),phone:phone.trim(),notes});
-  save(); renderAll();
-}
-function editContact(id){openContact(id)}
-function deleteContact(id){
-  if(!confirm("Delete this contact from the new app? Existing history will remain."))return;
-  data.contacts=data.contacts.filter(c=>c.id!==id);save();renderAll();
-}
-
-function setDealFilter(v){dealFilter=v;renderProducts()}
-function renderProducts() {
-  const q=($("productSearch")?.value||"").toLowerCase().trim();
-  const rows=data.products.filter(p=>
-    (dealFilter==="all" || p.dealStatus===dealFilter) &&
-    [p.brand,p.productType,p.description,p.platform,p.link].join(" ").toLowerCase().includes(q)
-  );
-  $("productsList").innerHTML=rows.length?rows.map(p=>`
-    <article class="item">
-      <div class="itemmain">
-        <h3>${esc(p.brand || p.name)} <span class="badge ${p.dealStatus==="closed"?"closed":""}">${p.dealStatus==="closed"?"Closed":"Active"}</span></h3>
-        <p>${esc(p.brand)} · ${esc(p.productType)}</p>
-        <p>${esc(p.platform)} · ${esc(p.price ? "₹"+p.price : "Price not set")}</p>
-        <p>${esc(p.description)}</p>
-        <p>${p.link?`<a href="${esc(p.link)}" target="_blank" rel="noopener">Open product link</a>`:"No link added"}</p>
-        <p>Allotted: ${p.allottedQty} ${esc(p.quantityUnit)} · Shared: ${data.shares.filter(s=>s.productId===p.id).length} · Ordered: ${data.shares.filter(s=>s.productId===p.id&&s.status==="ordered").length}</p>
-      </div>
-      <div class="actions">
-        <button class="btn small light" onclick="editProduct('${p.id}')">Edit</button>
-        <button class="btn small ${p.dealStatus==="closed"?"green":"light"}" onclick="toggleDeal('${p.id}')">${p.dealStatus==="closed"?"Reopen":"Close"}</button>
-        <button class="btn small red" onclick="deleteProduct('${p.id}')">Delete</button>
-      </div>
-    </article>`).join(""):`<div class="empty">No matching deals.</div>`;
-}
-
-function openProduct(id) {
-  const p=id?data.products.find(x=>x.id===id):{};
-  const ask=(label,val="")=>prompt(label,val??"");
-  const brand=ask("Brand name:",p?.brand||"");if(brand===null)return;
-  if(!brand.trim())return alert("Brand name is required.");
-  const productType=ask("Product type:",p?.productType||"");if(productType===null)return;
-  const description=ask("Description:",p?.description||"");if(description===null)return;
-  const price=ask("Price in rupees (optional):",p?.price||"");if(price===null)return;
-  const platform=ask("Platform (Amazon, Flipkart, Myntra, Nykaa, Other):",p?.platform||"Amazon");if(platform===null)return;
-  const link=ask("Product link:",p?.link||"");if(link===null)return;
-  const qty=ask("Allotted quantity:",String(p?.allottedQty??0));if(qty===null)return;
-  const quantityUnit=ask("Quantity unit:",p?.quantityUnit||"units");if(quantityUnit===null)return;
-  const dealStatus=ask("Deal status: type active or closed",p?.dealStatus||"active");if(dealStatus===null)return;
-  const obj={brand:brand.trim(),name:brand.trim(),productType:productType.trim(),description:description.trim(),price:price.trim(),platform:platform.trim()||"Other",link:link.trim(),allottedQty:Math.max(0,Number(qty)||0),quantityUnit:quantityUnit.trim()||"units",dealStatus:dealStatus.toLowerCase()==="closed"?"closed":"active"};
-  if(id)Object.assign(p,obj);else data.products.push({id:uid(),...obj});
-  save();renderAll();
-}
-function editProduct(id){openProduct(id)}
-function toggleDeal(id){
-  const p=data.products.find(x=>x.id===id);if(!p)return;
-  p.dealStatus=p.dealStatus==="closed"?"active":"closed";save();renderAll();
-}
-function deleteProduct(id){
-  if(!confirm("Delete this product from the new app? Existing history will remain."))return;
-  data.products=data.products.filter(p=>p.id!==id);save();renderAll();
-}
-
-function renderSendChoices() {
-  const cq=($("sendContactSearch")?.value||"").toLowerCase().trim();
-  const pq=($("sendProductSearch")?.value||"").toLowerCase().trim();
-  $("sendContacts").innerHTML=data.contacts.filter(c=>(c.name+" "+c.phone).toLowerCase().includes(cq)).map(c=>
-    `<label class="checkrow"><input type="checkbox" name="sendContact" value="${esc(c.id)}"><span>${esc(c.name)}<br><small class="muted">${esc(c.phone)}</small></span></label>`
-  ).join("") || `<div class="empty">Add contacts first.</div>`;
-  $("sendProducts").innerHTML=data.products.filter(p=>p.dealStatus!=="closed"&&(p.brand+" "+p.productType+" "+p.platform).toLowerCase().includes(pq)).map(p=>
-    `<label class="checkrow"><input type="checkbox" name="sendProduct" value="${esc(p.id)}"><span>${esc(p.brand)} · ${esc(p.productType)}<br><small class="muted">${esc(p.platform)} · Available: ${p.allottedQty}</small></span></label>`
-  ).join("") || `<div class="empty">No active products available.</div>`;
-}
-function selectAll(group,on) {
-  document.querySelectorAll("#"+group+" input[type=checkbox]").forEach(x=>x.checked=on);
-}
-
-function chooseTemplate() {
-  const templates={
-    free:`Something FREE is waiting for you! 🎁
-
-Hi {{User Name}},
-
-{{Brand Name}} has an exciting deal for you!
-{{Product Description}}
-
-{{Product Link}}
-
-Deal Dhamaka — Happy Shopping!`,
-    short:`Hi {{User Name}} 👋
-
-Check this deal from {{Brand Name}}!
-{{Product Description}}
-{{Product Link}}
-
-Happy Shopping! 🎁`,
-    link:`Hi {{User Name}},
-
-{{Brand Name}} - {{Product Type}}
-Price: {{Price}}
-Platform: {{Platform}}
-
-{{Product Link}}`
-  };
-  $("messageTemplate").value=templates[$("templateChoice").value]||templates.free;
-}
-
-function startSending() {
-  const contacts=[...document.querySelectorAll('input[name="sendContact"]:checked')]
-    .map(x=>data.contacts.find(c=>c.id===x.value)).filter(Boolean);
-  const products=[...document.querySelectorAll('input[name="sendProduct"]:checked')]
-    .map(x=>data.products.find(p=>p.id===x.value&&p.dealStatus!=="closed")).filter(Boolean);
-  if(!contacts.length||!products.length)return alert("Select at least one contact and one active product.");
-  if(!confirm(`Prepare ${contacts.length*products.length} share records?`))return;
-  preparedMessages=[];
-  for(const c of contacts)for(const p of products){
-    const replacements={
-      "{{User Name}}":c.name||"there",
-      "{{Brand Name}}":p.brand||p.name||"",
-      "{{Product Description}}":[p.productType,p.description].filter(Boolean).join(" · "),
-      "{{Product Link}}":p.link||"",
-      "{{Price}}":p.price||"Not specified",
-      "{{Platform}}":p.platform||"",
-      "{{Product Type}}":p.productType||""
-    };
-    let msg=$("messageTemplate").value;
-    Object.entries(replacements).forEach(([k,v])=>msg=msg.split(k).join(v));
-    const share={id:uid(),contactId:c.id,contactName:c.name,phone:c.phone,productId:p.id,brand:p.brand,productType:p.productType,platform:p.platform,message:msg,status:"pending",createdAt:new Date().toISOString()};
-    data.shares.push(share);
-    preparedMessages.push(share);
-  }
-  save();
-  $("sendResult").innerHTML=`<div class="notice">Prepared ${preparedMessages.length} message(s). Open each WhatsApp chat and tap Send.</div>`+
-    preparedMessages.map((s,i)=>`<div class="item"><div class="itemmain"><b>${esc(s.contactName)}</b><p>${esc(s.brand)} · ${esc(s.productType)}</p></div><button class="btn small green" onclick="openPrepared(${i})">WhatsApp ${i+1}</button></div>`).join("");
-  renderAll();
-}
-function openPrepared(i) {
-  const s=preparedMessages[i];if(!s)return;
-  const phone=String(s.phone||"").replace(/\D/g,"");
-  if(!phone)return alert("This contact has no valid phone number.");
-  window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(s.message),"_blank","noopener");
-}
-
-function clearTrackingFilters() {
-  ["trackingBrand","trackingType","trackingRecipient","trackingFrom","trackingTo"].forEach(id=>$(id).value="");
-  $("trackingStatus").value="all";renderHistory();
-}
-function updateTrackingOptions() {
-  const fill=(id,field,label)=>{
-    const el=$(id),old=el.value;
-    const values=[...new Set(data.shares.map(s=>s[field]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)));
-    el.innerHTML=`<option value="">${label}</option>`+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
-    if(values.includes(old))el.value=old;
-  };
-  fill("trackingBrand","brand","All brands");
-  fill("trackingType","productType","All product types");
-}
-
-function renderHistory() {
-  updateTrackingOptions();
-  const isTracking=$("page-tracking").classList.contains("active");
-  const nameQ=($("historyNameSearch")?.value||"").toLowerCase().trim();
-  const q=($("historySearch")?.value||"").toLowerCase().trim();
-  const recipient=($("trackingRecipient")?.value||"").toLowerCase().trim();
-  const brand=$("trackingBrand")?.value||"",type=$("trackingType")?.value||"";
-  const status=$("trackingStatus")?.value||"all";
-  const from=$("trackingFrom")?.value||"",to=$("trackingTo")?.value||"";
-  const rows=[...data.shares].reverse().filter(s=>{
-    const text=[s.brand,s.contactName,s.phone,s.productType,s.platform,s.status].join(" ").toLowerCase();
-    const d=String(s.createdAt||"").slice(0,10);
-    return text.includes(q) &&
-      String(s.contactName||"").toLowerCase().includes(nameQ) &&
-      (!isTracking || (
-        (!brand||s.brand===brand) &&
-        (!type||s.productType===type) &&
-        String(s.contactName||"").toLowerCase().includes(recipient) &&
-        (status==="all"||s.status===status) &&
-        (!from||d>=from) && (!to||d<=to)
-      ));
-  });
-  if($("historyCount"))$("historyCount").textContent=`${rows.length} record(s) shown`;
-  if($("trackingResultCount"))$("trackingResultCount").textContent=`Showing ${rows.length} of ${data.shares.length} records`;
-  const html=rows.length?rows.map(s=>`
-    <article class="item">
-      <div class="itemmain">
-        <h3>${esc(s.contactName)} · ${esc(s.brand||"Deal")}</h3>
-        <span class="badge ${s.status==="ordered"?"":"closed"}">${s.status==="ordered"?"Product Ordered":"Pending"}</span>
-        <p>${esc(s.productType)} · ${esc(s.platform)}</p>
-        <p>${esc(s.phone)} · ${esc(fmtDate(s.createdAt))}</p>
-        <p class="tiny">${esc(s.message)}</p>
-      </div>
-      <div class="actions">
-        <button class="btn small ${s.status==="ordered"?"light":"green"}" onclick="toggleOrdered('${s.id}')">${s.status==="ordered"?"Undo order":"Mark ordered"}</button>
-        <button class="btn small light" onclick="reopenShare('${s.id}')">WhatsApp</button>
-        <button class="btn small red" onclick="deleteShare('${s.id}')">Delete</button>
-      </div>
-    </article>`).join(""):`<div class="empty">No share records match these filters.</div>`;
-  $("historyList").innerHTML=html;$("trackingList").innerHTML=html;
-}
-function toggleOrdered(id) {
-  const s=data.shares.find(x=>x.id===id);if(!s)return;
-  s.status=s.status==="ordered"?"pending":"ordered";
-  s.orderedAt=s.status==="ordered"?new Date().toISOString():null;
-  save();renderAll();
-}
-function reopenShare(id) {
-  const s=data.shares.find(x=>x.id===id);if(!s)return;
-  window.open("https://wa.me/"+String(s.phone||"").replace(/\D/g,"")+"?text="+encodeURIComponent(s.message||""),"_blank","noopener");
-}
-function deleteShare(id) {
-  if(!confirm("Delete this share record?"))return;
-  data.shares=data.shares.filter(s=>s.id!==id);save();renderAll();
-}
-function renderTrackingStats() {
-  const ordered=data.shares.filter(s=>s.status==="ordered").length;
-  const pending=data.shares.length-ordered;
-  $("trackingStats").innerHTML=[
-    ["Total shares",data.shares.length],
-    ["Brands",new Set(data.products.map(p=>p.brand).filter(Boolean)).size],
-    ["Product types",new Set(data.products.map(p=>p.productType).filter(Boolean)).size],
-    ["Recipients",new Set(data.shares.map(s=>s.contactId||s.contactName).filter(Boolean)).size],
-    ["Ordered",ordered],["Pending",pending]
-  ].map(([k,v])=>`<div class="stat"><div class="label">${k}</div><strong>${v}</strong></div>`).join("");
-}
-
-function renderAll() {
-  renderDashboard();renderContacts();renderProducts();renderSendChoices();
-  renderHistory();renderTrackingStats();
-}
-
-function downloadBlob(blob,name) {
-  const url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1500);
-}
-function exportJSON() {
-  downloadBlob(new Blob([JSON.stringify({...data,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"}),"deal-dhamaka-backup-"+new Date().toISOString().slice(0,10)+".json");
-  $("backupMsg").innerHTML='<div class="notice">Backup exported. Keep it safe in Files or iCloud Drive.</div>';
-}
-function restoreJSON(event) {
-  const file=event.target.files?.[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try {
-      const v=JSON.parse(reader.result);
-      if(!Array.isArray(v.contacts)||!Array.isArray(v.products)||!Array.isArray(v.shares))throw new Error("The JSON must contain contacts, products and shares arrays.");
-      if(!confirm(`Import ${v.contacts.length} contacts, ${v.products.length} products and ${v.shares.length} share records into the NEW app?`))return;
-      data={contacts:v.contacts,products:v.products,shares:v.shares};
-      normaliseData();save();renderAll();go("home");
-      $("backupMsg").innerHTML='<div class="notice">Import successful. Check contacts, products and history.</div>';
-    } catch(e) {alert("Import failed: "+e.message);}
-    finally {event.target.value="";}
-  };
-  reader.readAsText(file);
-}
-function downloadTemplate(type) {
-  const csv=type==="contacts"
-    ?"name,phone,notes\nSample Contact,+919876543210,Optional notes\n"
-    :"brand,productType,description,price,platform,link,allottedQty,quantityUnit,dealStatus\nSample Brand,Skincare,Product description,0,Amazon,https://example.com,10,units,active\n";
-  downloadBlob(new Blob([csv],{type:"text/csv;charset=utf-8"}),type+"-template.csv");
-}
-function parseCSV(text) {
-  const rows=[];let row=[],field="",quoted=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i],n=text[i+1];
-    if(c==='"'&&quoted&&n==='"'){field+='"';i++;}
-    else if(c==='"')quoted=!quoted;
-    else if(c===","&&!quoted){row.push(field);field="";}
-    else if((c==="\n"||c==="\r")&&!quoted){
-      if(c==="\r"&&n==="\n")i++;
-      row.push(field);if(row.some(v=>v.trim()))rows.push(row);
-      row=[];field="";
-    } else field+=c;
-  }
-  row.push(field);if(row.some(v=>v.trim()))rows.push(row);
-  if(!rows.length)return [];
-  const headers=rows.shift().map(v=>v.trim().toLowerCase().replace(/\s+/g,""));
-  return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,(r[i]||"").trim()])));
-}
-function importCSV(type) {
-  const file=$("csvFile").files?.[0];if(!file)return alert("Choose a CSV file first.");
-  const reader=new FileReader();
-  reader.onload=()=>{
-    let count=0;
-    for(const r of parseCSV(reader.result)){
-      if(type==="contacts"){
-        const name=r.name||r.contactname,phone=r.phone||r.whatsapp||r.whatsappnumber;
-        if(!name||!phone)continue;
-        data.contacts.push({id:uid(),name,phone,notes:r.notes||""});count++;
-      } else {
-        const brand=r.brand||r.brandname||r.name,link=r.link||r.productlink||r.url;
-        if(!brand)continue;
-        data.products.push({
-          id:uid(),brand,name:brand,productType:r.producttype||r.type||"",
-          description:r.description||"",price:r.price||"",
-          platform:r.platform||"Other",link:link||"",
-          allottedQty:Math.max(0,Number(r.allottedqty||r.quantity||0)),
-          quantityUnit:r.quantityunit||"units",
-          dealStatus:r.dealstatus==="closed"?"closed":"active"
-        });count++;
-      }
-    }
-    save();renderAll();
-    $("csvMsg").innerHTML=`<div class="notice">Imported ${count} ${type}.</div>`;
-    $("csvFile").value="";
-  };
-  reader.readAsText(file);
-}
-function resetLocal() {
-  if(!confirm("Delete all data from this NEW app only? Export a backup first if needed."))return;
-  data={contacts:[],products:[],shares:[]};save();renderAll();go("home");
-}
-load();
-</script>
+<!-- Keep app.js first: it owns the existing dealDhamakaAgentV2 local-storage data. -->
+<script src="app.js"></script>
+<script src="whatsapp-enhancements.js"></script>
+<!-- The detailed dashboard renders first; analytics adds KPI/trend/stock/export tools above it. -->
+<script src="dashboard.js"></script>
+<script src="analytics.js"></script>
+<script src="followup.js"></script>
+<script src="undo-redo.js"></script>
 </body>
 </html>

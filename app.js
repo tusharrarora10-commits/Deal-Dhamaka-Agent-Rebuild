@@ -891,23 +891,48 @@ function renderSendLists() {
   const cq = $("sendContactSearch").value.toLowerCase();
   const pq = $("sendProductSearch").value.toLowerCase();
 
-  $("sendContacts").innerHTML = state.contacts
-    .filter(c => (c.name + " " + c.phone).toLowerCase().includes(cq))
-    .map(c => `
-      <label class="checkrow">
-        <input
-          type="checkbox"
-          data-contact="${c.id}"
-          ${selectedContacts.has(c.id) ? "checked" : ""}
-        >
-        <span>
-          ${esc(c.name)}
-          <small>${esc(c.phone)}</small>
-        </span>
-      </label>
-    `).join("") || '<div class="report-empty">No contacts found.</div>';
+  // Existing products without a status are considered active.
+  // Only explicitly closed deals are hidden from the Send selector.
+  const activeProducts = state.products.filter(
+    p => p.dealStatus !== "closed"
+  );
 
-  $("sendProducts").innerHTML = state.products
+  const activeProductIds = new Set(
+    activeProducts.map(p => String(p.id))
+  );
+
+  selectedProducts = new Set(
+    [...selectedProducts].map(String).filter(id => activeProductIds.has(id))
+  );
+
+  // A contact-product pair is considered already shared if it exists in history.
+  const previouslyShared = new Set(
+    state.shares
+      .filter(s => s.contactId != null && s.productId != null)
+      .map(s => String(s.contactId) + "::" + String(s.productId))
+  );
+
+  // When products have been selected, only show contacts eligible for
+  // at least one selected product. With no selected products, show all contacts.
+  const selectedProductIds = [...selectedProducts];
+  const eligibleContacts = state.contacts.filter(c => {
+    if (!selectedProductIds.length) return true;
+
+    return selectedProductIds.some(productId =>
+      !previouslyShared.has(String(c.id) + "::" + String(productId))
+    );
+  });
+
+  const eligibleContactIds = new Set(
+    eligibleContacts.map(c => String(c.id))
+  );
+
+  // Deselect contacts who are no longer eligible after product selection changes.
+  selectedContacts = new Set(
+    [...selectedContacts].map(String).filter(id => eligibleContactIds.has(id))
+  );
+
+  $("sendProducts").innerHTML = activeProducts
     .filter(p =>
       (p.name + " " + p.brand + " " + p.productType)
         .toLowerCase()
@@ -921,7 +946,7 @@ function renderSendLists() {
           <input
             type="checkbox"
             data-product="${p.id}"
-            ${selectedProducts.has(p.id) ? "checked" : ""}
+            ${selectedProducts.has(String(p.id)) ? "checked" : ""}
           >
           <span>
             ${esc(p.name)}
@@ -932,24 +957,40 @@ function renderSendLists() {
           </span>
         </label>
       `;
-    }).join("") || '<div class="report-empty">No products found.</div>';
+    }).join("") || '<div class="report-empty">No active deals found.</div>';
 
-  document.querySelectorAll("[data-contact]").forEach(c => {
-    c.onchange = () => {
-      const id = c.dataset.contact;
+  $("sendContacts").innerHTML = eligibleContacts
+    .filter(c => (c.name + " " + c.phone).toLowerCase().includes(cq))
+    .map(c => `
+      <label class="checkrow">
+        <input
+          type="checkbox"
+          data-contact="${c.id}"
+          ${selectedContacts.has(String(c.id)) ? "checked" : ""}
+        >
+        <span>
+          ${esc(c.name)}
+          <small>${esc(c.phone)}</small>
+        </span>
+      </label>
+    `).join("") || '<div class="report-empty">No eligible contacts found.</div>';
 
-      if (c.checked) selectedContacts.add(id);
+  document.querySelectorAll("#sendContacts [data-contact]").forEach(input => {
+    input.onchange = () => {
+      const id = String(input.dataset.contact);
+
+      if (input.checked) selectedContacts.add(id);
       else selectedContacts.delete(id);
 
       rebuildBatchFromSelections();
     };
   });
 
-  document.querySelectorAll("[data-product]").forEach(p => {
-    p.onchange = () => {
-      const id = p.dataset.product;
+  document.querySelectorAll("#sendProducts [data-product]").forEach(input => {
+    input.onchange = () => {
+      const id = String(input.dataset.product);
 
-      if (p.checked) selectedProducts.add(id);
+      if (input.checked) selectedProducts.add(id);
       else selectedProducts.delete(id);
 
       rebuildBatchFromSelections();
@@ -962,38 +1003,83 @@ function renderSendLists() {
 function rebuildBatchFromSelections() {
   batch = [];
 
-  selectedContacts.forEach(c =>
-    selectedProducts.forEach(p =>
-      batch.push({ contactId: c, productId: p })
-    )
+  const previouslyShared = new Set(
+    state.shares
+      .filter(s => s.contactId != null && s.productId != null)
+      .map(s => String(s.contactId) + "::" + String(s.productId))
   );
 
+  const activeProductIds = new Set(
+    state.products
+      .filter(p => p.dealStatus !== "closed")
+      .map(p => String(p.id))
+  );
+
+  selectedContacts.forEach(contactId => {
+    selectedProducts.forEach(productId => {
+      const pairKey = String(contactId) + "::" + String(productId);
+
+      if (
+        activeProductIds.has(String(productId)) &&
+        !previouslyShared.has(pairKey)
+      ) {
+        batch.push({
+          contactId: String(contactId),
+          productId: String(productId)
+        });
+      }
+    });
+  });
+
   batchIndex = 0;
+  renderSendLists();
   updateBatchUI();
 }
 
 $("allContacts").onclick = () => {
-  selectedContacts = new Set(state.contacts.map(x => x.id));
+  if (!selectedProducts.size) {
+    selectedContacts = new Set();
+    rebuildBatchFromSelections();
+    alert("Please select one or more active products first.");
+    return;
+  }
+
+  const previouslyShared = new Set(
+    state.shares
+      .filter(s => s.contactId != null && s.productId != null)
+      .map(s => String(s.contactId) + "::" + String(s.productId))
+  );
+
+  selectedContacts = new Set(
+    state.contacts
+      .filter(c => [...selectedProducts].some(productId =>
+        !previouslyShared.has(String(c.id) + "::" + String(productId))
+      ))
+      .map(c => String(c.id))
+  );
+
   rebuildBatchFromSelections();
-  renderSendLists();
 };
 
 $("clearContacts").onclick = () => {
   selectedContacts = new Set();
   rebuildBatchFromSelections();
-  renderSendLists();
 };
 
 $("allProducts").onclick = () => {
-  selectedProducts = new Set(state.products.map(x => x.id));
+  selectedProducts = new Set(
+    state.products
+      .filter(p => p.dealStatus !== "closed")
+      .map(p => String(p.id))
+  );
+
   rebuildBatchFromSelections();
-  renderSendLists();
 };
 
 $("clearProducts").onclick = () => {
   selectedProducts = new Set();
+  selectedContacts = new Set();
   rebuildBatchFromSelections();
-  renderSendLists();
 };
 
 $("sendContactSearch").oninput = renderSendLists;

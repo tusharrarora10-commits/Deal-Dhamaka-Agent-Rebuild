@@ -22,9 +22,9 @@
   }
 
   function setup() {
-    if (!$('recipientsPage')) {
+    if (!$('recipients')) {
       const page = document.createElement('section');
-      page.id = 'recipientsPage'; page.className = 'page';
+      page.id = 'recipients'; page.className = 'page';
       page.innerHTML = `
         <div class="sectionhead"><div><h2>Recipients</h2><p>Recipient-wise share details and order status</p></div><button class="secondary" id="refreshRecipients" type="button">Refresh</button></div>
         <div class="stats"><div class="stat"><b id="recipientShareTotal">0</b><span>Share Attempts</span></div><div class="stat"><b id="recipientOrderedTotal">0</b><span>Marked Ordered</span></div><div class="stat"><b id="recipientPendingTotal">0</b><span>Not Marked Ordered</span></div></div>
@@ -43,13 +43,13 @@
     const style = document.createElement('style');
     style.textContent = `
       .tabbar{grid-template-columns:repeat(8,minmax(0,1fr))!important}.tabbar button{min-width:0!important}
-      #recipientsPage .recipient-record{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 0}
-      #recipientsPage .recipient-record h3{font-size:17px;margin:0 0 10px;overflow-wrap:anywhere}
-      #recipientsPage .recipient-record p{color:#6b7280;font-size:13px;line-height:1.5;margin:5px 0;overflow-wrap:anywhere}
-      #recipientsPage .recipient-record .badge{font-size:12px;border-radius:20px;background:#f3f4f6;padding:5px 10px;display:inline-block;margin:2px 4px 2px 0}
-      #recipientsPage .ordered-toggle{display:flex;align-items:center;gap:10px;margin-top:12px;padding:14px;min-height:54px;border-radius:12px;background:#eaf7ee;color:#176534;font-weight:750}
-      #recipientsPage .ordered-toggle input{width:22px;height:22px;flex-shrink:0;accent-color:#218838;margin:0}
-      @media(max-width:520px){.tabbar button span{font-size:8px!important}#recipientsPage .recipient-record h3{font-size:15px}}
+      #recipients .recipient-record{background:#fff;border-bottom:1px solid #e5e7eb;padding:16px 0}
+      #recipients .recipient-record h3{font-size:17px;margin:0 0 10px;overflow-wrap:anywhere}
+      #recipients .recipient-record p{color:#6b7280;font-size:13px;line-height:1.5;margin:5px 0;overflow-wrap:anywhere}
+      #recipients .recipient-record .badge{font-size:12px;border-radius:20px;background:#f3f4f6;padding:5px 10px;display:inline-block;margin:2px 4px 2px 0}
+      #recipients .ordered-toggle{display:flex;align-items:center;gap:10px;margin-top:12px;padding:14px;min-height:54px;border-radius:12px;background:#eaf7ee;color:#176534;font-weight:750}
+      #recipients .ordered-toggle input{width:22px;height:22px;flex-shrink:0;accent-color:#218838;margin:0}
+      @media(max-width:520px){.tabbar button span{font-size:8px!important}#recipients .recipient-record h3{font-size:15px}}
     `;
     document.head.appendChild(style);
     $('refreshRecipients').onclick = render;

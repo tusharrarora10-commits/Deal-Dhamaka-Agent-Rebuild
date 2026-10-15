@@ -197,3 +197,10 @@ label{font-size:12px;margin:6px 0 2px}
 #productDealFilter label{display:flex;align-items:center;gap:7px;font-size:12px;margin:5px 0;}
 #productDealFilter input[type=radio]{width:18px;height:18px;margin:0;flex:0 0 auto;}
 @media(min-width:700px){.tabbar{display:flex;justify-content:space-around;}.tabbar button{min-width:55px;width:auto;font-size:11px!important;}.tabbar button span{font-size:11px!important;}}
+
+/* Preserve line breaks in WhatsApp message preview */
+#message {
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}

@@ -22,12 +22,39 @@
 
 <main>
 <section id="dashboard" class="page active">
-  <div class="hero dashboard-hero">
-    <h2>Your Deal Dhamaka at a glance</h2>
-    <p>Track shared value, ordered value, pending orders and deal performance in one place.</p>
+  <div class="dashboard-shell">
+    <div class="dashboard-welcome">
+      <div>
+        <div class="dashboard-kicker">DEAL DHAMAKA · CONTROL CENTRE</div>
+        <h2>Deal performance</h2>
+        <p>Your deal inventory, share value and order pipeline — in one view.</p>
+      </div>
+      <button class="primary dashboard-send" data-page="send" type="button">＋ Share a deal</button>
+    </div>
+    <div class="dashboard-periodbar">
+      <div><span class="dashboard-live-dot"></span><span id="dashboardPeriodCaption">All-time performance</span></div>
+      <label class="dashboard-period-control" for="dashboardPeriod">Period
+        <select id="dashboardPeriod" aria-label="Dashboard reporting period">
+          <option value="all" selected>All time</option>
+          <option value="today">Today</option>
+          <option value="7days">Last 7 days</option>
+          <option value="30days">Last 30 days</option>
+          <option value="month">This month</option>
+          <option value="90days">Last 90 days</option>
+        </select>
+      </label>
+    </div>
+    <div id="advancedDashboard" class="advanced-dashboard" aria-live="polite"></div>
+    <div class="dashboard-data-shortcuts">
+      <button type="button" data-page="products"><span>▦</span><b>Manage deals</b><small>Price, stock &amp; status</small></button>
+      <button type="button" data-page="contacts"><span>♙</span><b>Recipients</b><small>Contacts &amp; numbers</small></button>
+      <button type="button" data-page="tracking"><span>↗</span><b>Order tracking</b><small>Filters &amp; reporting</small></button>
+      <button type="button" data-page="settings"><span>⇧</span><b>Backup data</b><small>Export or restore</small></button>
+    </div>
   </div>
-  <button class="primary big" data-page="send">↗ Send a Deal</button>
-  <button class="secondary full" data-page="tracking">Open Detailed Tracking →</button>
+  <div class="dashboard-hidden-stats" aria-hidden="true">
+    <span id="contactCount">0</span><span id="productCount">0</span><span id="sentCount">0</span>
+  </div>
 </section>
 
 <section id="contacts" class="page">
@@ -223,7 +250,7 @@
 <!-- Keep app.js first: it owns the existing dealDhamakaAgentV2 local-storage data. -->
 <script src="app.js"></script>
 <script src="whatsapp-enhancements.js"></script>
-<!-- One consolidated Home dashboard; detailed filters and breakdowns stay in Tracking. -->
+<!-- One consolidated executive dashboard. Detailed filters and tables remain in Tracking. -->
 <script src="dashboard.js"></script>
 <script src="followup.js"></script>
 <script src="undo-redo.js"></script>

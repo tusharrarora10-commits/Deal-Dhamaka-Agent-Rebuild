@@ -431,6 +431,7 @@ function renderContacts() {
           <p>${esc(x.category)}</p>
         </div>
         <div class="actions">
+          <button class="mini" data-recipient-timeline="${esc(x.id)}">Timeline</button>
           <button class="mini" data-edit="${x.id}">Edit</button>
           <button class="mini" data-delete="${x.id}">Delete</button>
         </div>

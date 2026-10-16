@@ -231,7 +231,6 @@ function updateStats() {
   $("productCount").textContent = state.products.length;
   $("sentCount").textContent = state.shares.length;
 
-  renderInventoryOverview();
 }
 
 /* =========================
@@ -748,8 +747,7 @@ function renderProducts() {
         product.dealStatus = nextStatus;
         save();
         renderProducts();
-        renderInventoryOverview();
-        if (typeof renderAnalyticsDashboard === "function") renderAnalyticsDashboard();
+        if (typeof renderAdvancedDashboard === "function") renderAdvancedDashboard();
       };
     });
 }
@@ -1189,6 +1187,8 @@ $("openNext").onclick = () => {
     brand: p.brand,
     productType: p.productType,
     platform: p.platform,
+    // Keep a price snapshot so later product-price edits do not rewrite past value reports.
+    priceSnapshot: Math.max(0, Number(String(p.price || "").replace(/[^0-9.]/g, "")) || 0),
     time: Date.now(),
     message: msg,
     status: "WhatsApp opened; send not confirmed",

@@ -114,6 +114,12 @@
     return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2)));
   };
 
+  const money = value => new Intl.NumberFormat("en-IN", {
+    style: "currency", currency: "INR", maximumFractionDigits: 2
+  }).format(Number(value) || 0);
+
+  const productPrice = product => Math.max(0, Number(String(product?.price || "").replace(/[^0-9.]/g, "")) || 0);
+
   function escText(value) {
     if (typeof esc === "function") return esc(value);
     return String(value ?? "").replace(/[&<>"']/g, c => ({
@@ -505,6 +511,20 @@
     }).filter(Boolean);
 
     const periodShares = getPeriodShares(shares);
+    const productById = new Map(products.map(p => [String(p.id), p]));
+    const valueOfShare = share => {
+      const product = productById.get(String(share.productId));
+      // New records use an immutable price snapshot. Older records fall back to current product price.
+      return Math.max(0, Number.isFinite(Number(share.priceSnapshot)) && share.priceSnapshot !== ""
+        ? Number(share.priceSnapshot)
+        : productPrice(product));
+    };
+    const sharedAmount = periodShares.reduce((sum, share) => sum + valueOfShare(share), 0);
+    const orderedAmount = periodShares.filter(s => !!s.ordered)
+      .reduce((sum, share) => sum + valueOfShare(share), 0);
+    const pendingOrderAmount = Math.max(0, sharedAmount - orderedAmount);
+    const allottedAmount = products.reduce((sum, product) =>
+      sum + safeQty(product.allottedQty) * productPrice(product), 0);
     const ordered = periodShares.filter(s => !!s.ordered).length;
     const pendingOrdered = periodShares.length - ordered;
     const orderRate = periodShares.length
@@ -562,6 +582,10 @@
         ${metric("Contacts", contacts.length, "Saved contacts")}
         ${metric("Products", products.length, "Saved products")}
         ${metric("Order Rate", orderRate + "%", periodLabels[selectedPeriod] + " marked orders ÷ shares")}
+        ${metric("Shared Amount", money(sharedAmount), "Share records × saved unit price · selected period")}
+        ${metric("Ordered Amount", money(orderedAmount), "Records marked ordered × saved unit price")}
+        ${metric("Pending Order Value", money(pendingOrderAmount), "Shared amount minus ordered amount")}
+        ${metric("Allotted Value", money(allottedAmount), "All-time allotted quantity × current unit price")}
       </div>
 
       ${allStatus.overAllocated ? `
@@ -638,8 +662,7 @@
 
       <p class="hint">
         All-time stock status is independent of the activity-period filter.
-        Pending Ordered means a share record has not been marked ordered.
-        Opening WhatsApp does not confirm message delivery or an actual purchase.
+        Pending Order Value is based on share records not marked ordered. New shares keep a price snapshot; older records without a snapshot use the current product price. Allotted Value uses current product prices. Opening WhatsApp does not confirm message delivery or an actual purchase.
       </p>
     `;
 

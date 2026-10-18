@@ -109,7 +109,122 @@ function productTotals(productId) {
   };
 }
 
-function renderInventoryOverview() { /* Home inventory is consolidated in dashboard.js. */ }
+function renderInventoryOverview() {
+  const home = $("dashboard");
+  if (!home) return;
+
+  let panel = $("inventoryOverview");
+
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "inventoryOverview";
+    panel.className = "card";
+
+    const advanced = $("advancedDashboard");
+    const stats = home.querySelector(".stats");
+
+    if (advanced) {
+      advanced.insertAdjacentElement("afterend", panel);
+    } else if (stats) {
+      stats.insertAdjacentElement("afterend", panel);
+    } else {
+      home.appendChild(panel);
+    }
+  }
+
+  const total = state.products.reduce((sum, p) => {
+    const t = productTotals(p.id);
+
+    sum.allotted += t.allotted;
+    sum.shared += t.shared;
+    sum.ordered += t.ordered;
+    sum.pendingAllotted += t.pendingAllotted;
+    sum.pendingOrdered += t.pendingOrdered;
+    sum.available += t.available;
+    sum.shortage += t.shortage;
+
+    return sum;
+  }, {
+    allotted: 0,
+    shared: 0,
+    ordered: 0,
+    pendingAllotted: 0,
+    pendingOrdered: 0,
+    available: 0,
+    shortage: 0
+  });
+
+  const rows = state.products.map(p => {
+    const t = productTotals(p.id);
+
+    return `
+      <div class="report-row">
+        <span>
+          ${esc(p.name)}
+          <small style="display:block;color:var(--muted)">
+            Allotted: ${formatQuantity(t.allotted)} ${esc(t.unit)}
+            · Shared: ${t.shared}
+            · Ordered: ${t.ordered}
+            · Pending Allotted: ${formatQuantity(t.pendingAllotted)}
+            · Pending Ordered: ${t.pendingOrdered}
+          </small>
+        </span>
+        <strong>
+          Available: ${formatQuantity(t.available)}
+          ${t.shortage
+            ? ` · Over-allocated: ${formatQuantity(t.shortage)}`
+            : ""}
+        </strong>
+      </div>
+    `;
+  }).join("");
+
+  panel.innerHTML = `
+    <h3>Product Allotment &amp; Order Status</h3>
+
+    <div class="stats">
+      <div class="stat">
+        <b>${formatQuantity(total.allotted)}</b>
+        <span>Allotted</span>
+      </div>
+      <div class="stat">
+        <b>${total.shared}</b>
+        <span>Shared</span>
+      </div>
+      <div class="stat">
+        <b>${total.ordered}</b>
+        <span>Ordered</span>
+      </div>
+      <div class="stat">
+        <b>${formatQuantity(total.pendingAllotted)}</b>
+        <span>Pending Allotted</span>
+      </div>
+      <div class="stat">
+        <b>${total.pendingOrdered}</b>
+        <span>Pending Ordered</span>
+      </div>
+    </div>
+
+    ${total.shortage
+      ? `<p class="hint">Warning: ${formatQuantity(total.shortage)} unit(s) are over-allocated. Review product allotments.</p>`
+      : ""}
+
+    <p class="hint">
+      Each saved contact-product share consumes one allotted unit.
+      Ordered status is managed separately.
+    </p>
+
+    <button class="secondary full" type="button" id="openProductStock">
+      View Product Stock
+    </button>
+
+    <div>
+      ${rows || '<div class="report-empty">Add products to start tracking stock.</div>'}
+    </div>
+  `;
+
+  $("openProductStock").onclick = () => showPage("products");
+}
 
 function updateStats() {
   $("contactCount").textContent = state.contacts.length;
@@ -431,7 +546,6 @@ function renderContacts() {
           <p>${esc(x.category)}</p>
         </div>
         <div class="actions">
-          <button class="mini" data-timeline="${x.id}">Timeline</button>
           <button class="mini" data-edit="${x.id}">Edit</button>
           <button class="mini" data-delete="${x.id}">Delete</button>
         </div>
@@ -440,82 +554,8 @@ function renderContacts() {
     : '<div class="empty">No contacts yet. Add one or import a CSV.</div>';
 
   bindItemActions("contacts");
-  document.querySelectorAll("[data-timeline]").forEach(button => {
-    button.onclick = () => openContactTimeline(button.dataset.timeline);
-  });
 }
 
-function openContactTimeline(contactId) {
-  const contact = state.contacts.find(c => String(c.id) === String(contactId));
-  if (!contact) return;
-  const rows = state.shares
-    .filter(s => String(s.contactId) === String(contact.id) ||
-      (!s.contactId && s.phone && String(s.phone).replace(/\D/g, "") === String(contact.phone || "").replace(/\D/g, "")))
-    .sort((a,b) => Number(b.time || 0) - Number(a.time || 0));
-  const orderedCount = rows.filter(r => r.ordered).length;
-  const pendingCount = rows.length - orderedCount;
-  const reviewCount = rows.filter(r => (r.reviewStatus || "pending") !== "done").length;
-  const overlay = document.createElement("div");
-  overlay.className = "contact-timeline-overlay";
-  overlay.innerHTML = `
-    <section class="contact-timeline-panel" role="dialog" aria-modal="true" aria-label="Recipient timeline">
-      <header class="ct-head">
-        <div><div class="ct-kicker">DEAL DHAMAKA · RECIPIENT HISTORY</div><h2>${esc(contact.name)} · Timeline</h2>
-        <p>${esc(contact.phone || "")} ${contact.category ? "· " + esc(contact.category) : ""}</p></div>
-        <button type="button" class="ct-close" aria-label="Close timeline">×</button>
-      </header>
-      <div class="ct-kpis">
-        <div class="ct-kpi blue"><strong>${rows.length}</strong><span>Shared</span></div>
-        <div class="ct-kpi green"><strong>${orderedCount}</strong><span>Ordered</span></div>
-        <div class="ct-kpi amber"><strong>${pendingCount}</strong><span>Pending</span></div>
-        <div class="ct-kpi purple"><strong>${reviewCount}</strong><span>Review pending</span></div>
-      </div>
-      <div class="ct-controls"><input class="ct-search" type="search" placeholder="Filter by product or status" aria-label="Filter timeline"><select class="ct-product-filter" aria-label="Filter by product"><option value="">All products</option>${[...new Set(rows.map(r => r.productName || r.brand || "Unknown product"))].map(n => `<option>${esc(n)}</option>`).join("")}</select></div>
-      <div class="ct-table-wrap"><table class="ct-table"><thead><tr><th>Date</th><th>Product</th><th>Shared</th><th>Ordered</th><th>Review</th><th>Status</th></tr></thead><tbody>
-      ${rows.length ? rows.map(r => {
-        const product = state.products.find(p => String(p.id) === String(r.productId));
-        const date = r.time ? new Date(Number(r.time)) : null;
-        const review = r.reviewStatus || "pending";
-        return `<tr data-share-row="${esc(r.id)}" data-product-name="${esc(r.productName || r.brand || "Unknown product")}" data-search="${esc([r.productName,r.brand,r.productType,r.status,r.ordered ? "ordered" : "pending",review].join(" ").toLowerCase())}">
-          <td><strong>${date && !isNaN(date) ? date.toLocaleDateString("en-IN", {day:"2-digit",month:"short",year:"numeric"}) : "—"}</strong><small>${date && !isNaN(date) ? date.toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"}) : ""}</small></td>
-          <td><strong>${esc(r.brand || product?.brand || "")}</strong><small>${esc(r.productName || product?.name || "Unknown product")}</small></td>
-          <td><span class="ct-icon shared-icon">●</span><small>${date && !isNaN(date) ? date.toLocaleTimeString("en-IN", {hour:"2-digit",minute:"2-digit"}) : "Shared"}</small></td>
-          <td><select class="ct-edit-order" data-share-id="${esc(r.id)}" aria-label="Order status for ${esc(r.productName || r.brand)}"><option value="pending" ${!r.ordered ? "selected" : ""}>Pending</option><option value="ordered" ${r.ordered ? "selected" : ""}>Ordered</option></select><small>${r.orderedAt ? new Date(r.orderedAt).toLocaleDateString("en-IN", {day:"2-digit",month:"short"}) : ""}</small></td>
-          <td><select class="ct-edit-review" data-share-id="${esc(r.id)}" aria-label="Review status for ${esc(r.productName || r.brand)}"><option value="pending" ${review !== "done" ? "selected" : ""}>Pending</option><option value="done" ${review === "done" ? "selected" : ""}>Done</option></select></td>
-          <td><span class="ct-status ${r.ordered ? "is-ordered" : "is-pending"}">${r.ordered ? "Ordered" : "Pending"}</span></td>
-        </tr>`;
-      }).join("") : '<tr><td colspan="6" class="ct-empty">No saved share history for this recipient yet.</td></tr>'}
-      </tbody></table></div>
-      <footer class="ct-foot">Changes save automatically. “Shared” means the app opened WhatsApp; it does not confirm message delivery.</footer>
-    </section>`;
-  document.body.appendChild(overlay);
-  const close = () => overlay.remove();
-  overlay.querySelector(".ct-close").onclick = close;
-  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
-  const applyFilters = () => {
-    const q = overlay.querySelector(".ct-search").value.trim().toLowerCase();
-    const product = overlay.querySelector(".ct-product-filter").value;
-    overlay.querySelectorAll("[data-share-row]").forEach(row => {
-      row.hidden = !(row.dataset.search.includes(q) && (!product || row.dataset.productName === product));
-    });
-  };
-  overlay.querySelector(".ct-search").addEventListener("input", applyFilters);
-  overlay.querySelector(".ct-product-filter").addEventListener("change", applyFilters);
-  overlay.querySelectorAll(".ct-edit-order").forEach(select => select.addEventListener("change", () => {
-    const record = state.shares.find(r => String(r.id) === String(select.dataset.shareId));
-    if (!record) return;
-    record.ordered = select.value === "ordered";
-    record.orderedAt = record.ordered ? (record.orderedAt || new Date().toISOString()) : "";
-    save(); renderHistory(); renderTracking(); openContactTimeline(contactId); overlay.remove();
-  }));
-  overlay.querySelectorAll(".ct-edit-review").forEach(select => select.addEventListener("change", () => {
-    const record = state.shares.find(r => String(r.id) === String(select.dataset.shareId));
-    if (!record) return;
-    record.reviewStatus = select.value;
-    record.reviewUpdatedAt = new Date().toISOString();
-    save(); renderHistory(); renderTracking(); openContactTimeline(contactId); overlay.remove();
-  }));
-}
 
 let productDealFilter = "active";
 
@@ -851,48 +891,23 @@ function renderSendLists() {
   const cq = $("sendContactSearch").value.toLowerCase();
   const pq = $("sendProductSearch").value.toLowerCase();
 
-  // Existing products without a status are considered active.
-  // Only explicitly closed deals are hidden from the Send selector.
-  const activeProducts = state.products.filter(
-    p => p.dealStatus !== "closed"
-  );
+  $("sendContacts").innerHTML = state.contacts
+    .filter(c => (c.name + " " + c.phone).toLowerCase().includes(cq))
+    .map(c => `
+      <label class="checkrow">
+        <input
+          type="checkbox"
+          data-contact="${c.id}"
+          ${selectedContacts.has(c.id) ? "checked" : ""}
+        >
+        <span>
+          ${esc(c.name)}
+          <small>${esc(c.phone)}</small>
+        </span>
+      </label>
+    `).join("") || '<div class="report-empty">No contacts found.</div>';
 
-  const activeProductIds = new Set(
-    activeProducts.map(p => String(p.id))
-  );
-
-  selectedProducts = new Set(
-    [...selectedProducts].map(String).filter(id => activeProductIds.has(id))
-  );
-
-  // A contact-product pair is considered already shared if it exists in history.
-  const previouslyShared = new Set(
-    state.shares
-      .filter(s => s.contactId != null && s.productId != null)
-      .map(s => String(s.contactId) + "::" + String(s.productId))
-  );
-
-  // When products have been selected, only show contacts eligible for
-  // at least one selected product. With no selected products, show all contacts.
-  const selectedProductIds = [...selectedProducts];
-  const eligibleContacts = state.contacts.filter(c => {
-    if (!selectedProductIds.length) return true;
-
-    return selectedProductIds.some(productId =>
-      !previouslyShared.has(String(c.id) + "::" + String(productId))
-    );
-  });
-
-  const eligibleContactIds = new Set(
-    eligibleContacts.map(c => String(c.id))
-  );
-
-  // Deselect contacts who are no longer eligible after product selection changes.
-  selectedContacts = new Set(
-    [...selectedContacts].map(String).filter(id => eligibleContactIds.has(id))
-  );
-
-  $("sendProducts").innerHTML = activeProducts
+  $("sendProducts").innerHTML = state.products
     .filter(p =>
       (p.name + " " + p.brand + " " + p.productType)
         .toLowerCase()
@@ -906,7 +921,7 @@ function renderSendLists() {
           <input
             type="checkbox"
             data-product="${p.id}"
-            ${selectedProducts.has(String(p.id)) ? "checked" : ""}
+            ${selectedProducts.has(p.id) ? "checked" : ""}
           >
           <span>
             ${esc(p.name)}
@@ -917,40 +932,24 @@ function renderSendLists() {
           </span>
         </label>
       `;
-    }).join("") || '<div class="report-empty">No active deals found.</div>';
+    }).join("") || '<div class="report-empty">No products found.</div>';
 
-  $("sendContacts").innerHTML = eligibleContacts
-    .filter(c => (c.name + " " + c.phone).toLowerCase().includes(cq))
-    .map(c => `
-      <label class="checkrow">
-        <input
-          type="checkbox"
-          data-contact="${c.id}"
-          ${selectedContacts.has(String(c.id)) ? "checked" : ""}
-        >
-        <span>
-          ${esc(c.name)}
-          <small>${esc(c.phone)}</small>
-        </span>
-      </label>
-    `).join("") || '<div class="report-empty">No eligible contacts found.</div>';
+  document.querySelectorAll("[data-contact]").forEach(c => {
+    c.onchange = () => {
+      const id = c.dataset.contact;
 
-  document.querySelectorAll("#sendContacts [data-contact]").forEach(input => {
-    input.onchange = () => {
-      const id = String(input.dataset.contact);
-
-      if (input.checked) selectedContacts.add(id);
+      if (c.checked) selectedContacts.add(id);
       else selectedContacts.delete(id);
 
       rebuildBatchFromSelections();
     };
   });
 
-  document.querySelectorAll("#sendProducts [data-product]").forEach(input => {
-    input.onchange = () => {
-      const id = String(input.dataset.product);
+  document.querySelectorAll("[data-product]").forEach(p => {
+    p.onchange = () => {
+      const id = p.dataset.product;
 
-      if (input.checked) selectedProducts.add(id);
+      if (p.checked) selectedProducts.add(id);
       else selectedProducts.delete(id);
 
       rebuildBatchFromSelections();
@@ -963,83 +962,38 @@ function renderSendLists() {
 function rebuildBatchFromSelections() {
   batch = [];
 
-  const previouslyShared = new Set(
-    state.shares
-      .filter(s => s.contactId != null && s.productId != null)
-      .map(s => String(s.contactId) + "::" + String(s.productId))
+  selectedContacts.forEach(c =>
+    selectedProducts.forEach(p =>
+      batch.push({ contactId: c, productId: p })
+    )
   );
-
-  const activeProductIds = new Set(
-    state.products
-      .filter(p => p.dealStatus !== "closed")
-      .map(p => String(p.id))
-  );
-
-  selectedContacts.forEach(contactId => {
-    selectedProducts.forEach(productId => {
-      const pairKey = String(contactId) + "::" + String(productId);
-
-      if (
-        activeProductIds.has(String(productId)) &&
-        !previouslyShared.has(pairKey)
-      ) {
-        batch.push({
-          contactId: String(contactId),
-          productId: String(productId)
-        });
-      }
-    });
-  });
 
   batchIndex = 0;
-  renderSendLists();
   updateBatchUI();
 }
 
 $("allContacts").onclick = () => {
-  if (!selectedProducts.size) {
-    selectedContacts = new Set();
-    rebuildBatchFromSelections();
-    alert("Please select one or more active products first.");
-    return;
-  }
-
-  const previouslyShared = new Set(
-    state.shares
-      .filter(s => s.contactId != null && s.productId != null)
-      .map(s => String(s.contactId) + "::" + String(s.productId))
-  );
-
-  selectedContacts = new Set(
-    state.contacts
-      .filter(c => [...selectedProducts].some(productId =>
-        !previouslyShared.has(String(c.id) + "::" + String(productId))
-      ))
-      .map(c => String(c.id))
-  );
-
+  selectedContacts = new Set(state.contacts.map(x => x.id));
   rebuildBatchFromSelections();
+  renderSendLists();
 };
 
 $("clearContacts").onclick = () => {
   selectedContacts = new Set();
   rebuildBatchFromSelections();
+  renderSendLists();
 };
 
 $("allProducts").onclick = () => {
-  selectedProducts = new Set(
-    state.products
-      .filter(p => p.dealStatus !== "closed")
-      .map(p => String(p.id))
-  );
-
+  selectedProducts = new Set(state.products.map(x => x.id));
   rebuildBatchFromSelections();
+  renderSendLists();
 };
 
 $("clearProducts").onclick = () => {
   selectedProducts = new Set();
-  selectedContacts = new Set();
   rebuildBatchFromSelections();
+  renderSendLists();
 };
 
 $("sendContactSearch").oninput = renderSendLists;
@@ -1149,7 +1103,7 @@ $("openNext").onclick = () => {
     brand: p.brand,
     productType: p.productType,
     platform: p.platform,
-    priceSnapshot: Math.max(0, Number(p.price) || 0),
+    priceSnapshot: Number(p.price) || 0,
     time: Date.now(),
     message: msg,
     status: "WhatsApp opened; send not confirmed",

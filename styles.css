@@ -496,3 +496,26 @@ input[type=date],input[type=datetime-local],input[type=time]{
 #dashboard .dashboard-overview-grid .dash-kpi:nth-child(4) .dash-kpi-value{color:#ede9fe!important;}
 #dashboard .dashboard-overview-grid .dash-kpi .dash-kpi-note{color:#c1cee2!important;}
 #dashboard .dashboard-overview-grid .dash-kpi:after{opacity:.24!important;}
+
+
+/* CONTACT COUNTS + SORTING: compact recipient-level share/order metrics. */
+.contact-sort-label{color:#c1cee2!important;font-size:12px;margin:2px 0 0!important;}
+.contact-sort{background:#0d1626!important;color:#f1f5ff!important;border:1px solid #455773!important;color-scheme:dark;margin-bottom:12px;}
+#contactsList .contact-list-item{align-items:center;gap:12px;background:linear-gradient(145deg,#121e31,#101827)!important;border-color:#2d3d56!important;}
+#contactsList .contact-main{min-width:0;flex:1;}
+#contactsList .contact-main h3{color:#f8fbff!important;}
+#contactsList .contact-main p{color:#b7c4d9!important;}
+#contactsList .contact-actions{margin-top:12px;flex-wrap:wrap;}
+#contactsList .contact-product-stats{display:flex;gap:7px;flex-shrink:0;align-self:flex-start;}
+#contactsList .contact-product-stats span{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:55px;padding:8px 7px;border-radius:12px;border:1px solid #34445c;background:#1b2b43;}
+#contactsList .contact-product-stats strong{font-size:17px;line-height:1.2;color:#f8fbff!important;}
+#contactsList .contact-product-stats small{font-size:10px;font-weight:750;color:#c1cee2!important;margin-top:3px;}
+#contactsList .contact-ordered-count{background:#12372e!important;border-color:#28785f!important;}
+#contactsList .contact-ordered-count strong{color:#6ee7b7!important;}
+#contactsList .contact-shared-count{background:#142b49!important;border-color:#315d8d!important;}
+#contactsList .contact-shared-count strong{color:#93c5fd!important;}
+@media(max-width:390px){#contactsList .contact-product-stats{gap:4px}#contactsList .contact-product-stats span{min-width:47px;padding:7px 4px}#contactsList .contact-product-stats strong{font-size:15px}#contactsList .contact-product-stats small{font-size:9px}#contactsList .contact-actions .mini{padding:8px 9px;font-size:12px}}
+
+/* Fix the actual Clear selection ID used by bulk-followups.js. */
+#bulkFollowupClear{background:linear-gradient(135deg,#263d60,#1b2c46)!important;color:#f8fbff!important;border:1px solid #46658d!important;box-shadow:0 4px 12px #0002!important;}
+#bulkFollowupClear:disabled{background:#202d40!important;color:#aebed4!important;border-color:#35465e!important;opacity:1!important;}

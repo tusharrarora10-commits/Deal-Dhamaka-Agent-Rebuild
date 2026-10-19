@@ -6,6 +6,8 @@ This build consolidates the Home page into one executive dashboard and keeps det
 - Financial KPIs: Shared Value, Ordered Value, Pending Order Value and Allotted Value.
 - All-time / today / 7-day / 30-day / this-month / 90-day reporting filters (default: All Time).
 - Share-versus-order trend chart, top brands and product types by value, recent activity and an Action Centre.
+- Compact shared / ordered / pending / order-rate progress cards, optimized for narrow iPhone screens.
+- Historical share records remain visible on the dashboard even if the linked product was removed; missing live product prices are shown as zero unless a saved price snapshot exists.
 - Inventory snapshot: allotted, shared, pending allotted and pending ordered quantities, with over-allocation alerts.
 - Product price snapshot saved for new share records. Existing records without a snapshot use the current product price as an estimate.
 - Removed the overlapping analytics.js dashboard and duplicate Home inventory panel. Tracking remains the detailed report centre.

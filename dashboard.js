@@ -23,6 +23,13 @@
   .dashboard-period-control{display:flex;align-items:center;gap:7px;margin:0;font-size:10px;color:#7c879e}
   .dashboard-period-control select{margin:0;padding:8px 10px;width:auto;min-width:110px;border-radius:10px;border-color:#e2e7f0;font-size:11px;font-weight:750;background:#fff}
   .dashboard-overview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .dash-pipeline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+  .dash-pipeline-card{min-width:0;background:#fff;border:1px solid #e8ecf4;border-radius:13px;padding:11px 12px;box-shadow:0 3px 10px #24365b05}
+  .dash-pipeline-top{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#7c879e;font-size:10px;font-weight:800}
+  .dash-pipeline-value{display:block;margin:6px 0 8px;font-size:21px;line-height:1.1;letter-spacing:-.5px;font-weight:900;color:#202b47;overflow-wrap:anywhere}
+  .dash-pipeline-track{height:6px;background:#edf0f7;border-radius:10px;overflow:hidden}
+  .dash-pipeline-fill{height:100%;border-radius:10px;min-width:0}
+  .dash-pipeline-note{display:block;margin-top:6px;font-size:9px;line-height:1.35;color:#8a94a8}
   .dash-kpi{position:relative;overflow:hidden;min-width:0;background:#fff;border:1px solid #e8ecf4;border-radius:16px;padding:13px;box-shadow:0 3px 10px #24365b05}
   .dash-kpi:after{content:"";position:absolute;right:-18px;top:-20px;width:66px;height:66px;border-radius:50%;background:var(--tint,#eef1ff)}
   .dash-kpi-head{display:flex;align-items:center;gap:7px;color:#7c879e;font-size:10px;font-weight:800;position:relative;z-index:1}
@@ -63,7 +70,8 @@
   .contact-total-icon{display:grid;place-items:center;width:39px;height:39px;border-radius:12px;background:#dfe7ff;color:#405bd1;font-size:22px;flex:0 0 auto}
   .contact-total-card div{display:flex;flex-direction:column;gap:2px}.contact-total-card small{font-size:9px;letter-spacing:.8px;font-weight:850;color:#7784a0}.contact-total-card strong{font-size:24px;line-height:1.1;color:#1b2744}.contact-total-caption{margin-left:auto;color:#8792aa;font-size:10px;font-weight:700}
   
-  @media(min-width:650px){.dashboard-welcome{padding:25px 27px}.dashboard-welcome h2{font-size:30px}.dashboard-welcome p{font-size:13px}.dashboard-overview-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.dash-kpi{padding:16px}.dash-section{padding:18px;margin-top:13px}.dash-charts-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr);gap:13px}.dash-lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.dashboard-data-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-insights{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  @media(max-width:380px){.dashboard-welcome{align-items:flex-start;flex-direction:column;padding:17px}.dashboard-welcome h2{font-size:22px}.dashboard-send{width:100%}.dashboard-periodbar{align-items:flex-start;flex-direction:column}.dashboard-period-control{width:100%;justify-content:space-between}.dashboard-period-control select{flex:1;max-width:180px}.dash-kpi{padding:11px}.dash-kpi-value{font-size:20px}.dash-refund-count{font-size:8px;padding:5px 6px}}
+  @media(min-width:650px){.dashboard-welcome{padding:25px 27px}.dashboard-welcome h2{font-size:30px}.dashboard-welcome p{font-size:13px}.dashboard-overview-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.dash-pipeline-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.dash-kpi{padding:16px}.dash-section{padding:18px;margin-top:13px}.dash-charts-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr);gap:13px}.dash-lower-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.dashboard-data-shortcuts{grid-template-columns:repeat(4,minmax(0,1fr))}.dash-insights{grid-template-columns:repeat(4,minmax(0,1fr))}}
   `;
   document.head.appendChild(style);
 
@@ -72,12 +80,13 @@
     const byId = new Map(products.map(p => [String(p.id), p]));
     const shares = (Array.isArray(state.shares) ? state.shares : []).map(s => {
       const product = s.productId == null ? null : byId.get(String(s.productId));
-      if (s.productId != null && !product) return null;
+      // Keep historical share records visible even if the linked product was deleted.
+      // Prefer the saved price/brand/type snapshot, and fall back to the live product only when present.
       const price = s.priceSnapshot !== undefined && s.priceSnapshot !== null && s.priceSnapshot !== ""
         ? Math.max(0, Number(s.priceSnapshot) || 0)
         : Math.max(0, Number(product?.price) || 0);
-      return {...s, _price:price, _brand:s.brand || product?.brand || product?.name || "Unspecified", _type:s.productType || product?.productType || "Unspecified", _product:product};
-    }).filter(Boolean);
+      return {...s, _price:price, _brand:s.brand || product?.brand || product?.name || s.productName || "Unspecified", _type:s.productType || product?.productType || "Unspecified", _product:product};
+    });
     return {contacts:state.contacts||[],products,shares};
   }
   function matchesPeriod(s) {
@@ -159,6 +168,12 @@
         ${kpi("ORDERED VALUE",money(orderedValue),`${ordered.length} marked ordered · selected period`,"✓",palette.green,"#e7f8ef")}
         ${kpi("PENDING ORDER VALUE",money(pendingValue),`${pending.length} share record(s) awaiting order status`,"◷",palette.amber,"#fff4e2")}
         ${kpi("ALLOTTED VALUE",money(allottedValue),`${qty(allotted)} units allotted · current product prices`,"▦",palette.ink,"#edf0f7")}
+      </div>
+      <div class="dash-pipeline-grid" aria-label="Order pipeline summary">
+        <div class="dash-pipeline-card"><div class="dash-pipeline-top"><span>SHARED</span><span>↗</span></div><strong class="dash-pipeline-value">${qty(selected.length)}</strong><div class="dash-pipeline-track"><div class="dash-pipeline-fill" style="width:${selected.length?100:0}%;background:${palette.blue}"></div></div><small class="dash-pipeline-note">Saved share records · selected period</small></div>
+        <div class="dash-pipeline-card"><div class="dash-pipeline-top"><span>ORDERED</span><span>✓</span></div><strong class="dash-pipeline-value">${qty(ordered.length)}</strong><div class="dash-pipeline-track"><div class="dash-pipeline-fill" style="width:${selected.length?Math.min(100,ordered.length/selected.length*100):0}%;background:${palette.green}"></div></div><small class="dash-pipeline-note">${selected.length?Math.round(ordered.length/selected.length*100):0}% of selected shares</small></div>
+        <div class="dash-pipeline-card"><div class="dash-pipeline-top"><span>PENDING</span><span>◷</span></div><strong class="dash-pipeline-value">${qty(pending.length)}</strong><div class="dash-pipeline-track"><div class="dash-pipeline-fill" style="width:${selected.length?Math.min(100,pending.length/selected.length*100):0}%;background:${palette.amber}"></div></div><small class="dash-pipeline-note">Awaiting order status</small></div>
+        <div class="dash-pipeline-card"><div class="dash-pipeline-top"><span>ORDER RATE</span><span>%</span></div><strong class="dash-pipeline-value">${selected.length?Math.round(ordered.length/selected.length*100):0}%</strong><div class="dash-pipeline-track"><div class="dash-pipeline-fill" style="width:${selected.length?Math.min(100,ordered.length/selected.length*100):0}%;background:linear-gradient(90deg,${palette.green},#7bd8ae)"></div></div><small class="dash-pipeline-note">Recorded orders / share records</small></div>
       </div>
       <div class="dash-refund-card" role="group" aria-label="Refunded amount summary"><span class="dash-refund-icon">↩</span><div class="dash-refund-copy"><div class="dash-refund-label">REFUNDED AMOUNT</div><div class="dash-refund-value">${money(refundedValue)}</div><div class="dash-refund-note">${refundedRows.length} refunded record(s) · selected period</div></div><span class="dash-refund-count">${refundedRows.length} REFUND${refundedRows.length===1?"":"S"}</span></div>
       ${section("Share & order activity","Trend for the selected reporting period",trendChart(selected),period==="all"?"ALL TIME":period.toUpperCase())}

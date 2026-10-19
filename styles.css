@@ -441,3 +441,58 @@ input[type=date],input[type=datetime-local],input[type=time]{
 /* Make all low-emphasis labels readable; retain semantic green/amber/red statuses. */
 .page label,.page .muted,.page .subtle,.page small,.page .caption{color:#b7c4d9;}
 .page h1,.page h2,.page h3,.page h4,.page strong{color:#f1f5ff;}
+
+
+/* FINAL TARGETED POLISH: bulk-follow-up controls + home value cards */
+/* Never use pale text on near-white buttons/chips in the follow-up panel. */
+#bulkFollowupSelectAll,#bulkFollowupClearSelection,
+#bulkFollowupCard #bulkFollowupSelectAll,#bulkFollowupCard #bulkFollowupClearSelection,
+.bulk-followup-card #bulkFollowupSelectAll,.bulk-followup-card #bulkFollowupClearSelection{
+  background:linear-gradient(135deg,#263d60,#1b2c46)!important;
+  color:#f8fbff!important;border:1px solid #46658d!important;
+  box-shadow:0 4px 12px #0002!important;
+}
+#bulkFollowupSelectedCount,.bulk-followup-card #bulkFollowupSelectedCount,
+.bulk-followup-card .selection-count,.bulk-followup-card .selected-count{
+  background:#1b2c43!important;color:#f3f7ff!important;
+  border:1px solid #405572!important;
+}
+#bulkFollowupStatus,.bulk-followup-card #bulkFollowupStatus,
+.bulk-followup-card .bulk-followup-status{
+  background:#17263a!important;color:#dce8fa!important;
+  border:1px solid #344c69!important;
+}
+#bulkFollowupStatus:empty{display:none!important;}
+/* Explicit disabled state: muted blue-grey with enough contrast, not white-on-white. */
+.bulk-followup-card button:disabled,#bulkFollowupCard button:disabled,
+.bulk-followup-card [aria-disabled="true"]{
+  background:#202d40!important;color:#aebed4!important;
+  border:1px solid #35465e!important;opacity:1!important;
+}
+/* Home page value cards: separate, attractive accent palettes for shared and ordered value. */
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(1){
+  background:linear-gradient(145deg,#142b49,#111a2a 78%)!important;border-color:#315d8d!important;
+  --tone:#7db8ff;--tint:#24528a;
+}
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(2){
+  background:linear-gradient(145deg,#12372f,#111a2a 78%)!important;border-color:#28785f!important;
+  --tone:#6ee7b7;--tint:#1d604c;
+}
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(3){
+  background:linear-gradient(145deg,#3a2d16,#171b27 78%)!important;border-color:#80602b!important;
+  --tone:#fcd34d;--tint:#654b1e;
+}
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(4){
+  background:linear-gradient(145deg,#2b2147,#111a2a 78%)!important;border-color:#604b91!important;
+  --tone:#c4b5fd;--tint:#4a3678;
+}
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(1) .dash-kpi-head,
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(1) .dash-kpi-value{color:#dbeafe!important;}
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(2) .dash-kpi-head,
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(2) .dash-kpi-value{color:#d1fae5!important;}
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(3) .dash-kpi-head,
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(3) .dash-kpi-value{color:#fef3c7!important;}
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(4) .dash-kpi-head,
+#dashboard .dashboard-overview-grid .dash-kpi:nth-child(4) .dash-kpi-value{color:#ede9fe!important;}
+#dashboard .dashboard-overview-grid .dash-kpi .dash-kpi-note{color:#c1cee2!important;}
+#dashboard .dashboard-overview-grid .dash-kpi:after{opacity:.24!important;}

@@ -394,3 +394,50 @@ label{color:#d7e1f2!important;}
 /* Keep status colours high contrast on their dark backgrounds. */
 .ordered-toggle,.product-ordered,.status-ordered{background:#12372e!important;color:#8af0c5!important;border-color:#236b52!important;}
 .pending-toggle,.status-pending{background:#3a2d16!important;color:#fcd34d!important;border-color:#7b5b25!important;}
+
+
+/* GLOBAL DARK-MODE LEGIBILITY PASS — fixes light KPI tiles and washed-out disabled controls. */
+:root{--ink:#f1f5ff;--muted:#b7c4d9;--bg:#080d18;--white:#111a2a;--line:#34445c;}
+/* KPI/stat tiles were still inheriting white backgrounds in Tracking and Recipients. */
+.stat,.stats .stat,.stats>div,.kpi,.kpi-card,.metric-card,.summary-card,
+#tracking .stat,#tracking .stats>div,#recipients .stat,#recipients .stats>div,
+#tracking .kpi,#recipients .kpi,.tracking-summary>div,.recipient-summary>div{
+  background:linear-gradient(145deg,#17243a,#111a2a)!important;
+  color:#f1f5ff!important;border:1px solid #34445c!important;
+  box-shadow:0 8px 22px #0003!important;
+}
+.stat b,.stat strong,.stat .value,.stats .stat b,.stats .stat strong,
+.kpi b,.kpi strong,.kpi-card b,.kpi-card strong,.metric-card b,.metric-card strong,
+.summary-card b,.summary-card strong{color:#f8fbff!important;}
+.stat span,.stat small,.stats .stat span,.stats .stat small,.kpi span,.kpi small,
+.kpi-card span,.kpi-card small,.metric-card span,.metric-card small,
+.summary-card span,.summary-card small{color:#c1cee2!important;}
+/* Prevent pale text on white or near-white helper/empty states. */
+.empty,.report-empty,.empty-state,.no-results,.no-eligible,.eligible-empty,
+.bulk-followup-card .empty,.bulk-followup-card .empty-state,
+.bulk-followup-card .status-message,#tracking .empty,#recipients .empty{
+  background:#111a2a!important;color:#e5edf9!important;border:1px solid #34445c!important;
+}
+/* Disabled buttons remain legible while visibly inactive. */
+button:disabled,.primary:disabled,.secondary:disabled,.mini:disabled,
+button[disabled],[aria-disabled="true"]{
+  opacity:1!important;background:#26344a!important;color:#aebed5!important;
+  border-color:#3b4b64!important;cursor:not-allowed!important;
+}
+/* All buttons in app modules use the shared high-contrast palette unless explicitly semantic. */
+button:not(.primary):not(.danger):not(.whatsapp):not(.ordered-toggle):not(.product-ordered):not(.status-ordered):not(.pending-toggle):not(.status-pending):not(.active){
+  color:#eaf1ff;
+}
+/* Light utility pills and selected-count chips were hard to read on dark pages. */
+.selected-count,.selection-count,.count-pill,.eligible-count,.chip,.pill:not(.badge),
+.bulk-followup-card .selection-count,.bulk-followup-card .selected-count{
+  background:#24344d!important;color:#eaf1ff!important;border:1px solid #405572!important;
+}
+/* Date controls and native date text on iOS Safari. */
+input[type=date],input[type=datetime-local],input[type=time]{
+  background:#0d1626!important;color:#f1f5ff!important;color-scheme:dark!important;
+  border-color:#455773!important;
+}
+/* Make all low-emphasis labels readable; retain semantic green/amber/red statuses. */
+.page label,.page .muted,.page .subtle,.page small,.page .caption{color:#b7c4d9;}
+.page h1,.page h2,.page h3,.page h4,.page strong{color:#f1f5ff;}

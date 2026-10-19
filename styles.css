@@ -354,3 +354,43 @@ label{color:#d7e1f2!important;}
 .status-table tfoot td{border-top-color:#40516b!important;}
 #inventoryOverview .stat{background:#111a2a!important;border:1px solid #29364b!important;color:#e5edf9!important;}
 #inventoryOverview .stat span{color:#9aa9bf!important;}
+
+/* HIGH-CONTRAST DARK MODE PATCH (2026-10-19)
+   Overrides light surfaces injected by feature modules so every tab remains readable. */
+:root{--text:#f1f5ff;--text-muted:#b7c4d9;--muted:#b7c4d9;--line:#34445c;}
+/* Dashboard widgets are injected by dashboard.js and must override its embedded light theme. */
+#dashboard .dashboard-shell,#dashboard .dash-section,#dashboard .dash-kpi,
+#dashboard .dashboard-periodbar,#dashboard .dashboard-period-control,
+#dashboard .dashboard-data-shortcuts button{background:#111a2a!important;color:#f1f5ff!important;border-color:#34445c!important;}
+#dashboard .dashboard-period-control select{background:#0d1626!important;color:#f1f5ff!important;border-color:#455773!important;}
+#dashboard .dash-kpi-label,#dashboard .dash-kpi small,#dashboard .dash-kpi span{color:#bdc9dc!important;}
+#dashboard .dash-kpi strong,#dashboard .dash-kpi-value{color:#f8fbff!important;}
+#dashboard .dashboard-send{background:#3156a5!important;color:#fff!important;}
+/* Dynamically generated bulk follow-up panel. */
+.bulk-followup-card{background:#111a2a!important;color:#f1f5ff!important;border-color:#34445c!important;}
+.bulk-followup-card h1,.bulk-followup-card h2,.bulk-followup-card h3,.bulk-followup-card h4,
+.bulk-followup-card p,.bulk-followup-card label,.bulk-followup-card strong,.bulk-followup-card span{color:#e5edf9;}
+.bulk-followup-card .hint,.bulk-followup-card small,.bulk-followup-card .muted{color:#b7c4d9!important;}
+.bulk-followup-card select,.bulk-followup-card textarea,.bulk-followup-card input[type=search],.bulk-followup-card input:not([type=checkbox]){background:#0d1626!important;color:#f1f5ff!important;border-color:#455773!important;}
+.bulk-followup-card button{color:#f1f5ff;}
+.bulk-followup-card .secondary,.bulk-followup-card .mini{background:#24344d!important;color:#eaf1ff!important;border-color:#405572!important;}
+.bulk-followup-card .primary,.bulk-followup-card button.start-followups{background:#3156a5!important;color:#fff!important;}
+/* Recipient details were still rendered as a white record panel. */
+#recipients .recipient-record,#recipients .recipient-record *{color:#e5edf9;}
+#recipients .recipient-record{background:#111a2a!important;border-bottom:1px solid #34445c!important;}
+#recipients .recipient-record .badge,#recipients .recipient-record .pill{background:#24344d!important;color:#e5edf9!important;border-color:#405572!important;}
+/* Analytics and tracking tables / cards. */
+.analytics-card,.analytics-panel,#analytics .card,#analytics .item{background:#111a2a!important;color:#e5edf9!important;border-color:#34445c!important;}
+.analytics-card h1,.analytics-card h2,.analytics-card h3,.analytics-card p,.analytics-card span{color:#e5edf9;}
+#refunds .refund-table{background:#111a2a!important;color:#e5edf9!important;}
+#refunds .refund-table th{background:#1b2b46!important;color:#f1f5ff!important;}
+#refunds .refund-table td{background:#111a2a!important;color:#e5edf9!important;border-bottom-color:#34445c!important;}
+#refunds .refund-summary-tile{background:#172236!important;border-color:#34445c!important;}
+#refunds .refund-summary-tile span,#refunds .refund-summary-tile b{color:#e5edf9!important;}
+#refunds .refund-pill.shared{background:#1b2b4b!important;color:#a9c4ff!important;}
+#refunds .refund-pill.ordered{background:#12372e!important;color:#6ee7b7!important;}
+/* Any generated content blocks using a generic white surface should inherit readable text. */
+.dark-surface,.generated-panel{background:#111a2a!important;color:#e5edf9!important;border-color:#34445c!important;}
+/* Keep status colours high contrast on their dark backgrounds. */
+.ordered-toggle,.product-ordered,.status-ordered{background:#12372e!important;color:#8af0c5!important;border-color:#236b52!important;}
+.pending-toggle,.status-pending{background:#3a2d16!important;color:#fcd34d!important;border-color:#7b5b25!important;}

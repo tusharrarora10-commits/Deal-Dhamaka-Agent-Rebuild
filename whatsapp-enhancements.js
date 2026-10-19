@@ -199,48 +199,111 @@ Sharing this deal with you:
   }
 
   function editTemplate(existing) {
-    const name = prompt("Template name:", existing?.name || "My Template");
-    if (name === null) return;
+    // Use a real multiline editor instead of prompt(), which is unreliable
+    // for editing messages containing line breaks on mobile browsers.
+    const oldEditor = document.getElementById("waTemplateEditor");
+    if (oldEditor) oldEditor.remove();
 
-    if (!name.trim()) {
-      alert("Enter a template name.");
-      return;
-    }
+    const overlay = document.createElement("div");
+    overlay.id = "waTemplateEditor";
+    overlay.style.cssText = [
+      "position:fixed", "inset:0", "z-index:99999",
+      "background:rgba(0,0,0,.55)", "display:flex",
+      "align-items:center", "justify-content:center",
+      "padding:16px", "box-sizing:border-box"
+    ].join(";");
 
-    const message = prompt(
-      "Enter your message. Use placeholders such as {{contactName}}, {{brand}}, {{productName}}, {{price}}, and {{link}}.",
-      existing?.message ||
-        "Hi {{contactName}} 👋\n\n{{productName}}\n{{description}}\n\n{{link}}"
-    );
+    const defaultMessage =
+      "Hi {{contactName}} 👋\n\n{{productName}}\n{{description}}\n\n{{link}}";
 
-    if (message === null) return;
-    if (!message.trim()) {
-      alert("Template message cannot be empty.");
-      return;
-    }
+    overlay.innerHTML = `
+      <section role="dialog" aria-modal="true" aria-labelledby="waEditorTitle"
+        style="width:100%;max-width:640px;max-height:92vh;overflow:auto;
+        background:var(--surface,#fff);color:var(--text,#172033);
+        border-radius:16px;padding:18px;box-sizing:border-box;
+        box-shadow:0 12px 40px rgba(0,0,0,.25)">
+        <h3 id="waEditorTitle" style="margin:0 0 14px">
+          ${existing ? "Edit WhatsApp Template" : "Create WhatsApp Template"}
+        </h3>
+        <label for="waEditorName" style="display:block;font-weight:700;margin-bottom:6px">
+          Template name
+        </label>
+        <input id="waEditorName" type="text" maxlength="80"
+          style="width:100%;box-sizing:border-box;padding:12px;margin-bottom:14px;
+          border:1px solid var(--border,#d0d5dd);border-radius:10px;font:inherit">
+        <label for="waEditorMessage" style="display:block;font-weight:700;margin-bottom:6px">
+          Message
+        </label>
+        <textarea id="waEditorMessage" rows="14" spellcheck="false"
+          style="width:100%;min-height:260px;box-sizing:border-box;resize:vertical;
+          padding:12px;border:1px solid var(--border,#d0d5dd);border-radius:10px;
+          font:inherit;line-height:1.5;white-space:pre-wrap"></textarea>
+        <p class="hint" style="margin:10px 0">
+          Line breaks and blank lines are preserved. Useful placeholders:
+          {{contactName}}, {{phone}}, {{brand}}, {{productName}},
+          {{productType}}, {{description}}, {{price}}, {{platform}}, {{link}}
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+          <button type="button" class="secondary" id="waEditorCancel">Cancel</button>
+          <button type="button" class="primary" id="waEditorSave">Save Template</button>
+        </div>
+      </section>
+    `;
 
-    if (existing) {
-      existing.name = name.trim();
-      existing.message = message;
-      selectedId = existing.id;
-    } else {
-      const created = {
-        id: "custom-" + Date.now() + "-" +
-          Math.random().toString(36).slice(2, 7),
-        name: name.trim(),
-        message
-      };
-      templates.push(created);
-      selectedId = created.id;
-    }
+    document.body.appendChild(overlay);
+    const nameInput = overlay.querySelector("#waEditorName");
+    const messageInput = overlay.querySelector("#waEditorMessage");
+    nameInput.value = existing?.name || "My Template";
+    messageInput.value = existing?.message || defaultMessage;
 
-    saveTemplates();
-    renderPanel();
+    const close = () => overlay.remove();
+    overlay.querySelector("#waEditorCancel").addEventListener("click", close);
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) close();
+    });
 
-    const pair = currentPair();
-    if (pair && $("message")) {
-      $("message").value = buildMessage(pair.contact, pair.product);
-    }
+    overlay.querySelector("#waEditorSave").addEventListener("click", () => {
+      const name = nameInput.value.trim();
+      // Keep line breaks exactly as typed, normalizing only Windows CRLF.
+      const message = messageInput.value.replace(/\r\n?/g, "\n");
+
+      if (!name) {
+        alert("Enter a template name.");
+        nameInput.focus();
+        return;
+      }
+      if (!message.trim()) {
+        alert("Template message cannot be empty.");
+        messageInput.focus();
+        return;
+      }
+
+      if (existing) {
+        existing.name = name;
+        existing.message = message;
+        selectedId = existing.id;
+      } else {
+        const created = {
+          id: "custom-" + Date.now() + "-" +
+            Math.random().toString(36).slice(2, 7),
+          name,
+          message
+        };
+        templates.push(created);
+        selectedId = created.id;
+      }
+
+      saveTemplates();
+      renderPanel();
+      close();
+
+      const pair = currentPair();
+      if (pair && $("message")) {
+        $("message").value = buildMessage(pair.contact, pair.product);
+      }
+    });
+
+    nameInput.focus();
   }
 
   function findDuplicates(contact, product) {

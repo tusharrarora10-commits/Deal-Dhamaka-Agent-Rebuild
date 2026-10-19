@@ -22,26 +22,38 @@
 
 <main>
 <section id="dashboard" class="page active">
-  <div class="hero">
-    <h2>Share deals. Track everything.</h2>
-    <p>Manage products and contacts, share through WhatsApp, and see brand-wise and recipient-wise results.</p>
+  <div class="dashboard-shell">
+    <div class="dashboard-welcome">
+      <div>
+        <div class="dashboard-kicker">DEAL DHAMAKA · CONTROL CENTRE</div>
+        <h2>Deal performance</h2>
+        <p>Your deal inventory, share value and order pipeline — in one view.</p>
+      </div>
+      <button class="primary dashboard-send" data-page="send" type="button">＋ Share a deal</button>
+    </div>
+    <div class="dashboard-periodbar">
+      <div><span class="dashboard-live-dot"></span><span id="dashboardPeriodCaption">All-time performance</span></div>
+      <label class="dashboard-period-control" for="dashboardPeriod">Period
+        <select id="dashboardPeriod" aria-label="Dashboard reporting period">
+          <option value="all" selected>All time</option>
+          <option value="today">Today</option>
+          <option value="7days">Last 7 days</option>
+          <option value="30days">Last 30 days</option>
+          <option value="month">This month</option>
+          <option value="90days">Last 90 days</option>
+        </select>
+      </label>
+    </div>
+    <div id="advancedDashboard" class="advanced-dashboard" aria-live="polite"></div>
+    <div class="dashboard-data-shortcuts">
+      <button type="button" data-page="products"><span>▦</span><b>Manage deals</b><small>Price, stock &amp; status</small></button>
+      <button type="button" data-page="contacts"><span>♙</span><b>Recipients</b><small>Contacts &amp; numbers</small></button>
+      <button type="button" data-page="tracking"><span>↗</span><b>Order tracking</b><small>Filters &amp; reporting</small></button>
+      <button type="button" data-page="settings"><span>⇧</span><b>Backup data</b><small>Export or restore</small></button>
+    </div>
   </div>
-  <div class="stats">
-    <div class="stat"><b id="contactCount">0</b><span>Contacts</span></div>
-    <div class="stat"><b id="productCount">0</b><span>Products</span></div>
-    <div class="stat"><b id="sentCount">0</b><span>Share Attempts</span></div>
-  </div>
-  <button class="primary big" data-page="send">Send a Deal →</button>
-  <button class="secondary full" data-page="tracking">Open Tracking Dashboard</button>
-  <div class="card">
-    <h3>How it works</h3>
-    <ol>
-      <li>Add contacts and products.</li>
-      <li>Enter brand and product type for each product.</li>
-      <li>Select recipients and products.</li>
-      <li>Open each WhatsApp chat and tap Send.</li>
-      <li>Review share-attempt counts in Tracking.</li>
-    </ol>
+  <div class="dashboard-hidden-stats" aria-hidden="true">
+    <span id="contactCount">0</span><span id="productCount">0</span><span id="sentCount">0</span>
   </div>
 </section>
 
@@ -50,6 +62,7 @@
     <div><h2>Contacts</h2><p>Names and WhatsApp numbers</p></div>
     <button class="primary" id="addContact">＋ Add</button>
   </div>
+  <div class="contact-total-card" aria-live="polite"><span class="contact-total-icon">♙</span><div><small>TOTAL CONTACTS</small><strong id="totalContactCount">0</strong></div><span class="contact-total-caption">Saved recipients</span></div>
   <input id="contactSearch" class="search" placeholder="Search name or number">
   <div id="contactsList"></div>
 </section>
@@ -65,35 +78,34 @@
 
 <section id="send" class="page">
   <div class="sectionhead">
-    <div><h2>Send WhatsApp</h2><p>Choose multiple contacts and products</p></div>
+    <div><h2>Send WhatsApp</h2><p>Choose brand, products, then eligible contacts</p></div>
+  </div>
+  <div class="card">
+    <div class="selection-head"><h3>1. Select Brand</h3><button class="mini" id="clearSendBrand" type="button">All Brands</button></div>
+    <select id="sendBrandFilter" class="search" aria-label="Filter products by brand">
+      <option value="">All brands</option>
+    </select>
+    <p class="hint">Choose a brand first to narrow the product list and eligible contacts.</p>
   </div>
   <div class="card">
     <div class="selection-head">
-      <h3>Select Contacts</h3>
-      <div>
-        <button class="mini" id="allContacts">All</button>
-        <button class="mini" id="clearContacts">Clear</button>
-      </div>
-    </div>
-    <input id="sendContactSearch" class="search" placeholder="Find contact">
-    <div id="sendContacts" class="checklist"></div>
-  </div>
-  <div class="card">
-    <div class="selection-head">
-      <h3>Select Products</h3>
-      <div>
-        <button class="mini" id="allProducts">All</button>
-        <button class="mini" id="clearProducts">Clear</button>
-      </div>
+      <h3>2. Select Products</h3>
+      <div><button class="mini" id="allProducts" type="button">All</button><button class="mini" id="clearProducts" type="button">Clear</button></div>
     </div>
     <input id="sendProductSearch" class="search" placeholder="Find product">
     <div id="sendProducts" class="checklist"></div>
   </div>
   <div class="card">
+    <div class="selection-head">
+      <h3>3. Select Eligible Contacts</h3>
+      <div><button class="mini" id="allContacts" type="button">All</button><button class="mini" id="clearContacts" type="button">Clear</button></div>
+    </div>
+    <input id="sendContactSearch" class="search" placeholder="Find contact">
+    <div id="sendContacts" class="checklist"></div>
+  </div>
+  <div class="card">
     <h3>Message Preview</h3>
-    <label>Message
-      <textarea id="message" rows="9" placeholder="Select one contact and one product to preview a message"></textarea>
-    </label>
+    <label>Message<textarea id="message" rows="9" placeholder="Select one contact and one product to preview a message"></textarea></label>
     <p class="hint">For bulk sharing, the app opens one WhatsApp chat at a time. You must tap Send in WhatsApp, then return here and tap the next button.</p>
     <div id="batchInfo" class="notice">Select contacts and products to begin.</div>
     <button id="openNext" class="whatsapp big" disabled>Open Next WhatsApp</button>
@@ -196,6 +208,21 @@
   </div>
 </section>
 
+<section id="refunds" class="page">
+  <div class="sectionhead"><div><h2>Refunds</h2><p>Review eligible shared products and mark refunds</p></div><button class="secondary" id="refreshRefunds" type="button">Refresh</button></div>
+  <div class="card refund-summary-card">
+    <h3>Refund summary</h3>
+    <div id="refundSummary" class="refund-summary-grid" aria-live="polite">
+      <div class="refund-summary-tile"><span>Total refunded</span><b>₹0</b></div>
+      <div class="refund-summary-tile"><span>Refunded records</span><b>0</b></div>
+      <div class="refund-summary-tile"><span>Ordered eligible</span><b>0</b></div>
+    </div>
+    <p class="hint">Total refunded is calculated from the amounts saved on records marked as refunded. Edit an amount in the list and it updates the total.</p>
+  </div>
+  <div class="card"><h3>Find products</h3><input id="refundProductSearch" class="search" placeholder="Search product or brand"><div class="selection-head"><b>Select products</b><div><button class="mini" id="refundSelectAllProducts" type="button">Select all</button><button class="mini" id="refundClearProducts" type="button">Clear</button></div></div><div id="refundProductList" class="checklist"></div><button id="markProductsRefunded" class="primary full" type="button">Mark eligible contacts for selected products as refunded</button><p class="hint">Product-wide action marks eligible ordered share records for the selected products. Review the contact list first.</p></div>
+  <div class="card"><h3>Eligible contacts</h3><input id="refundContactSearch" class="search" placeholder="Search recipient, number or product"><div class="selection-head"><b>Select contacts</b><div><button class="mini" id="refundSelectAllContacts" type="button">Select all</button><button class="mini" id="refundClearContacts" type="button">Clear</button></div></div><div id="refundContactList"></div><button id="markContactsRefunded" class="primary full" type="button">Mark selected contacts as refunded</button><p class="hint">Refund status is stored per recipient-product share record. Refund amount defaults to the saved unit price and can be edited.</p></div>
+</section>
+
 <section id="settings" class="page">
   <div class="sectionhead">
     <div><h2>Data &amp; Settings</h2><p>Backup your local data</p></div>
@@ -223,6 +250,7 @@
   <button data-page="history">◷<span>History</span></button>
   <button data-page="settings">⚙<span>Settings</span></button>
   <button data-page="tracking">📊<span>Tracking</span></button>
+  <button data-page="refunds">↩<span>Refunds</span></button>
 </nav>
 
 <div id="modal" class="modal" hidden>
@@ -238,10 +266,12 @@
 <!-- Keep app.js first: it owns the existing dealDhamakaAgentV2 local-storage data. -->
 <script src="app.js"></script>
 <script src="whatsapp-enhancements.js"></script>
+<!-- One consolidated executive dashboard. Detailed filters and tables remain in Tracking. -->
+<script src="dashboard.js"></script>
 <script src="followup.js"></script>
+<script src="bulk-followups.js"></script>
 <script src="undo-redo.js"></script>
-<script src="recipients-tab.js"></script>
-<script src="advanced-command-centre.js"></script>
+  <script src="recipients-tab.js"></script>
 <script src="refunds.js"></script>
 </body>
 </html>

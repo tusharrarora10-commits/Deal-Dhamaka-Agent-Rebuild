@@ -568,7 +568,6 @@ function renderContacts() {
           <p>WhatsApp: ${esc(x.phone)}</p>
           ${x.category ? `<p>${esc(x.category)}</p>` : ""}
           ${x.amazonProfileUrl || x.amazonProfile ? `<div class="amazon-profile-actions"><a class="mini amazon-profile-link" href="${esc(x.amazonProfileUrl || x.amazonProfile)}" target="_blank" rel="noopener noreferrer">View Amazon Profile ↗</a><button class="mini" type="button" data-copy-amazon="${esc(x.id)}">Copy Profile Link</button></div>` : `<p class="amazon-profile-missing">Amazon profile link not added</p>`}
-          <button class="amazon-review-card" type="button" data-amazon-reviews="${esc(x.id)}"><span class="amazon-review-icon">★</span><span class="amazon-review-copy"><strong>Amazon Reviews</strong><small>${Array.isArray(x.amazonReviewBrands) && x.amazonReviewBrands.length ? `${x.amazonReviewBrands.length} saved brand${x.amazonReviewBrands.length === 1 ? "" : "s"}` : (x.amazonReviewStatus === "blocked" ? "Unable to refresh — Amazon access blocked" : "View detected review brands")}</small></span><span class="amazon-review-arrow">›</span></button>
           <div class="actions contact-actions">
             <button class="mini" data-timeline="${x.id}">Timeline</button>
             <button class="mini" data-edit="${x.id}">Edit</button>

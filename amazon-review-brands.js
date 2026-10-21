@@ -1,129 +1,131 @@
-/* Best-effort Amazon review-brand card. Amazon may block browser-side profile access. */
-(() => {
-  const STORAGE_KEY = "dealDhamakaAgentV2";
+/* Amazon Review Brands card — best-effort, user-verified data.
+   Amazon profile pages often block cross-origin automated review extraction. This
+   feature never invents brands; users can save verified brand names manually. */
+(function () {
+  "use strict";
   const REFRESH_MS = 4 * 60 * 60 * 1000;
-  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c]));
-  const readState = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (_) { return {}; } };
-  const writeContact = (id, patch) => {
-    // Reuse the app's in-memory state and existing save() path to avoid cache fields
-    // being lost the next time the main app saves contacts.
-    try {
-      if (typeof state !== "undefined" && Array.isArray(state.contacts)) {
-        const contact = state.contacts.find(c => String(c.id) === String(id));
-        if (!contact) return null;
-        Object.assign(contact, patch);
-        if (typeof save === "function") save(); else localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        return contact;
-      }
-    } catch (_) {}
-    const data = readState();
-    if (!Array.isArray(data.contacts)) return null;
-    const contact = data.contacts.find(c => String(c.id) === String(id));
-    if (!contact) return null;
-    Object.assign(contact, patch); localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); return contact;
-  };
-  const getContact = id => {
-    try { if (typeof state !== "undefined" && Array.isArray(state.contacts)) return state.contacts.find(c => String(c.id) === String(id)); } catch (_) {}
-    return (readState().contacts || []).find(c => String(c.id) === String(id));
-  };
-  const profileUrl = c => String(c?.amazonProfileUrl || c?.amazonProfile || "").trim();
-  const dateLabel = value => value ? new Date(value).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "Never";
-
-  function openDialog(id) {
-    const c = getContact(id); if (!c) return;
-    document.querySelector(".amazon-review-overlay")?.remove();
-    const brands = Array.isArray(c.amazonReviewBrands) ? c.amazonReviewBrands : [];
-    const overlay = document.createElement("div"); overlay.className = "amazon-review-overlay";
-    overlay.innerHTML = `<section class="amazon-review-dialog" role="dialog" aria-modal="true" aria-label="Amazon review brands for ${esc(c.name)}">
-      <h3>Amazon Review Brands</h3><p>${esc(c.name || "Contact")} · Brands saved from review information</p>
-      <div class="amazon-review-status" id="arbStatus">${esc(statusText(c))}</div>
-      <div class="amazon-review-brand-list" id="arbBrands">${brands.length ? brands.map(b=>`<span class="amazon-review-brand-chip">${esc(b.name || b)}</span>`).join("") : `<p>No verified brand names saved yet.</p>`}</div>
-      <p>Last successful check: ${esc(dateLabel(c.amazonReviewCheckedAt))}. The app will retry every 4 hours while open. iPhone browsers do not guarantee background refresh while the app is closed.</p>
-      <label for="arbBrandInput">Add a verified brand manually</label><input id="arbBrandInput" maxlength="80" placeholder="Enter brand name">
-      <div class="amazon-review-buttons"><button class="primary" id="arbAdd">Add brand</button><button id="arbRefresh">Refresh now</button>${profileUrl(c) ? `<a href="${esc(profileUrl(c))}" target="_blank" rel="noopener noreferrer">Open Amazon profile ↗</a>` : ""}<button id="arbClose">Close</button></div>
-    </section>`;
-    document.body.appendChild(overlay);
-    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
-    overlay.querySelector("#arbClose").onclick = () => overlay.remove();
-    overlay.querySelector("#arbAdd").onclick = () => {
-      const input = overlay.querySelector("#arbBrandInput"); const name = input.value.trim(); if (!name) return;
-      const current = getContact(id); const list = Array.isArray(current.amazonReviewBrands) ? [...current.amazonReviewBrands] : [];
-      if (!list.some(b => String(b.name || b).toLowerCase() === name.toLowerCase())) list.push({name, source:"manual", addedAt:new Date().toISOString()});
-      writeContact(id, {amazonReviewBrands:list, amazonReviewStatus:"manual", amazonReviewCheckedAt:current.amazonReviewCheckedAt || ""});
-      input.value = ""; renderBrands(overlay, list); refreshCardText(id);
-    };
-    overlay.querySelector("#arbRefresh").onclick = () => refreshProfile(id, overlay);
-    refreshProfile(id, overlay, true);
+  const STORE_KEY = "dealDhamakaAgentV2";
+  const norm = v => String(v || "").trim();
+  const escapeHtml = v => norm(v).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+  const getState = () => window.state || (typeof state !== "undefined" ? state : null);
+  function contactById(id) {
+    const s = getState();
+    return s && Array.isArray(s.contacts) ? s.contacts.find(c => String(c.id) === String(id)) : null;
   }
-  function statusText(c) {
-    if (!profileUrl(c)) return "Add an Amazon profile link to enable refresh attempts.";
-    if (c.amazonReviewStatus === "blocked") return "Unable to refresh: Amazon did not allow browser access. No brands were guessed.";
-    if (c.amazonReviewStatus === "checked-empty") return "Profile page was reached, but no reliable brand names could be extracted.";
-    if (c.amazonReviewStatus === "manual") return "Brand list includes names entered and verified manually.";
-    if (c.amazonReviewStatus === "ok") return "Review information checked; only detected names are listed.";
-    return "Ready to check. Amazon may restrict access to public review data.";
+  function persist() {
+    try { if (typeof save === "function") save(); } catch (_) {}
   }
-  function renderBrands(overlay, brands) {
-    const el = overlay.querySelector("#arbBrands"); if (!el) return;
-    el.innerHTML = brands.length ? brands.map(b=>`<span class="amazon-review-brand-chip">${esc(b.name || b)}</span>`).join("") : "<p>No verified brand names saved yet.</p>";
+  function brandsFor(c) {
+    if (!Array.isArray(c.amazonReviewBrands)) c.amazonReviewBrands = [];
+    return c.amazonReviewBrands;
   }
-  function refreshCardText(id) {
-    const c = getContact(id); const button = document.querySelector(`[data-amazon-reviews="${CSS.escape(String(id))}"]`); if (!button || !c) return;
-    const small = button.querySelector("small"); if (small) small.textContent = Array.isArray(c.amazonReviewBrands) && c.amazonReviewBrands.length ? `${c.amazonReviewBrands.length} saved brand${c.amazonReviewBrands.length === 1 ? "" : "s"}` : c.amazonReviewStatus === "blocked" ? "Unable to refresh — Amazon access blocked" : "View detected review brands";
+  function card(c) {
+    const brands = brandsFor(c);
+    const last = c.amazonReviewCheckedAt ? new Date(c.amazonReviewCheckedAt).toLocaleString() : "Not checked yet";
+    const status = c.amazonReviewStatus || "Not checked yet";
+    return `<button type="button" class="mini amazon-review-card" data-amazon-reviews="${escapeHtml(c.id)}">
+      <span class="amazon-review-card-icon">★</span>
+      <span class="amazon-review-card-copy"><strong>Amazon Reviews</strong><small>${brands.length} ${brands.length === 1 ? "brand" : "brands"} · ${escapeHtml(status)}</small><small>Last checked: ${escapeHtml(last)}</small></span>
+      <span class="amazon-review-chevron">›</span>
+    </button>`;
   }
-  async function refreshProfile(id, overlay, quiet=false) {
-    let c = getContact(id); if (!c) return;
-    const url = profileUrl(c); const status = overlay?.querySelector("#arbStatus");
-    if (!url) { writeContact(id, {amazonReviewStatus:"no-link", amazonReviewAttemptedAt:new Date().toISOString()}); if(status) status.textContent = statusText(getContact(id)); return; }
-    const now = Date.now();
-    if (quiet && c.amazonReviewAttemptedAt && now - new Date(c.amazonReviewAttemptedAt).getTime() < REFRESH_MS) { if(status) status.textContent = statusText(c); return; }
-    if (status) status.textContent = "Checking public profile access…";
-    writeContact(id, {amazonReviewAttemptedAt:new Date().toISOString()});
-    try {
-      const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 9000);
-      const response = await fetch(url, {mode:"cors", credentials:"omit", signal:controller.signal, headers:{"Accept":"text/html"}}); clearTimeout(timer);
-      if (!response.ok) throw new Error("Amazon returned an unavailable response");
-      const html = await response.text();
-      // Only use clearly labeled review elements if the page exposes them to browser fetch.
-      const doc = new DOMParser().parseFromString(html, "text/html");
-      const candidates = [...doc.querySelectorAll('[data-hook="review"], [data-hook="review-body"], .review')];
-      const found = new Set();
-      for (const node of candidates) {
-        const text = (node.innerText || node.textContent || "").trim();
-        const brand = node.querySelector('[data-hook="cr-product-title"], .a-link-normal[href*="/dp/"], a[href*="/dp/"]');
-        const name = (brand?.textContent || "").trim();
-        if (name && name.length <= 100) found.add(name);
-      }
-      const old = Array.isArray(c.amazonReviewBrands) ? c.amazonReviewBrands : [];
-      const merged = [...old];
-      for (const name of found) if (!merged.some(b => String(b.name || b).toLowerCase() === name.toLowerCase())) merged.push({name, source:"public-page", addedAt:new Date().toISOString()});
-      const patch = {amazonReviewBrands:merged, amazonReviewCheckedAt:new Date().toISOString(), amazonReviewStatus:found.size ? "ok" : "checked-empty"};
-      writeContact(id, patch); c = getContact(id);
-      if (status) status.textContent = statusText(c);
-      const list = overlay?.querySelector("#arbBrands"); if (list) renderBrands(overlay, merged);
-      const p = overlay?.querySelector(".amazon-review-dialog > p:nth-of-type(2)"); if (p) p.textContent = `Last successful check: ${dateLabel(c.amazonReviewCheckedAt)}. The app will retry every 4 hours while open. iPhone browsers do not guarantee background refresh while the app is closed.`;
-    } catch (_) {
-      writeContact(id, {amazonReviewStatus:"blocked"}); c = getContact(id);
-      if (status) status.textContent = statusText(c);
-    }
-    refreshCardText(id);
-  }
-  function bindCards() {
-    document.querySelectorAll("[data-amazon-reviews]").forEach(button => { if (button.dataset.arbBound) return; button.dataset.arbBound="1"; button.addEventListener("click", () => openDialog(button.dataset.amazonReviews)); });
-  }
-  function refreshDueProfiles() {
-    const data = readState(); const now = Date.now();
-    (data.contacts || []).forEach(c => {
-      if (!profileUrl(c)) return;
-      const last = c.amazonReviewAttemptedAt ? new Date(c.amazonReviewAttemptedAt).getTime() : 0;
-      if (!last || now - last >= REFRESH_MS) refreshProfile(c.id, null, true);
+  function decorateContacts() {
+    const list = document.getElementById("contactsList");
+    const s = getState();
+    if (!list || !s || !Array.isArray(s.contacts)) return;
+    list.querySelectorAll(".contact-list-item").forEach(item => {
+      const edit = item.querySelector("[data-edit]");
+      const c = edit && contactById(edit.dataset.edit);
+      if (!c) return;
+      const old = item.querySelector(".amazon-review-card");
+      if (old) old.remove();
+      const holder = document.createElement("div");
+      holder.innerHTML = card(c);
+      const main = item.querySelector(".contact-main") || item;
+      const actions = main.querySelector(".contact-actions");
+      main.insertBefore(holder.firstElementChild, actions || null);
+    });
+    list.querySelectorAll("[data-amazon-reviews]").forEach(btn => {
+      btn.addEventListener("click", () => openReviewDetails(btn.dataset.amazonReviews));
     });
   }
-  const observer = new MutationObserver(bindCards);
-  observer.observe(document.body, {childList:true, subtree:true});
-  document.addEventListener("DOMContentLoaded", () => { bindCards(); refreshDueProfiles(); });
-  // Foreground-only periodic check; browsers suspend timers while the app is closed.
-  setInterval(() => { if (document.visibilityState === "visible") refreshDueProfiles(); }, 60 * 1000);
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshDueProfiles(); });
-  bindCards();
+  function openReviewDetails(id) {
+    const c = contactById(id);
+    if (!c) return;
+    const brands = brandsFor(c);
+    const profile = norm(c.amazonProfileUrl || c.amazonProfile);
+    const body = document.createElement("div");
+    body.className = "amazon-review-modal-content";
+    body.innerHTML = `
+      <p class="hint">Brands below are user-verified. Amazon may block automatic review extraction, so this card will not invent brand names.</p>
+      <div class="amazon-review-brand-list">${brands.length ? brands.map(b => `<div class="amazon-review-brand">${escapeHtml(b)}</div>`).join("") : '<p class="empty">No verified brands saved yet.</p>'}</div>
+      <label for="amazonReviewBrandsInput">Add or update brand names</label>
+      <textarea id="amazonReviewBrandsInput" rows="4" placeholder="Enter one brand per line">${escapeHtml(brands.join("\n"))}</textarea>
+      <p class="hint">Enter one brand per line. Save only brands you have confirmed from the profile’s reviews.</p>
+      <div class="amazon-review-modal-actions">
+        ${profile ? `<a class="mini amazon-profile-link" href="${escapeHtml(profile)}" target="_blank" rel="noopener noreferrer">Open Amazon Profile ↗</a>` : ""}
+        <button class="mini" type="button" id="amazonReviewRefresh">Check for updates</button>
+      </div>
+      <p class="hint" id="amazonReviewStatus">${escapeHtml(c.amazonReviewStatus || "Not checked yet")}</p>
+      <button class="primary full" type="button" id="amazonReviewSave">Save verified brands</button>`;
+    const modal = document.getElementById("modal");
+    if (!modal) return;
+    document.getElementById("modalTitle").textContent = `Amazon Reviews — ${c.name || "Contact"}`;
+    const form = document.getElementById("modalForm");
+    form.innerHTML = "";
+    form.appendChild(body);
+    modal.hidden = false;
+    document.getElementById("closeModal").onclick = () => { modal.hidden = true; };
+    body.querySelector("#amazonReviewSave").onclick = () => {
+      const values = body.querySelector("#amazonReviewBrandsInput").value.split(/\r?\n/).map(norm).filter(Boolean);
+      c.amazonReviewBrands = [...new Set(values)];
+      c.amazonReviewCheckedAt = new Date().toISOString();
+      c.amazonReviewStatus = "Brands saved";
+      persist();
+      modal.hidden = true;
+      if (typeof renderContacts === "function") renderContacts();
+      decorateContacts();
+    };
+    body.querySelector("#amazonReviewRefresh").onclick = () => {
+      c.amazonReviewCheckedAt = new Date().toISOString();
+      c.amazonReviewStatus = "Unable to refresh automatically";
+      persist();
+      body.querySelector("#amazonReviewStatus").textContent = c.amazonReviewStatus + " — Amazon may block automated access. Open the profile to verify new reviews, then save brand names.";
+      if (profile) window.open(profile, "_blank", "noopener,noreferrer");
+      if (typeof renderContacts === "function") renderContacts();
+      decorateContacts();
+    };
+  }
+  function refreshDueStatuses() {
+    const s = getState();
+    if (!s || !Array.isArray(s.contacts)) return;
+    const now = Date.now();
+    let changed = false;
+    s.contacts.forEach(c => {
+      if (!c.amazonReviewCheckedAt || now - new Date(c.amazonReviewCheckedAt).getTime() >= REFRESH_MS) {
+        c.amazonReviewStatus = "Refresh due — open profile to verify";
+        changed = true;
+      }
+    });
+    if (changed) persist();
+    decorateContacts();
+  }
+  function init() {
+    if (typeof renderContacts !== "function") { setTimeout(init, 250); return; }
+    const original = renderContacts;
+    if (!original.__amazonReviewWrapped) {
+      const wrapped = function () { original.apply(this, arguments); decorateContacts(); };
+      wrapped.__amazonReviewWrapped = true;
+      window.renderContacts = wrapped;
+      try { renderContacts = wrapped; } catch (_) {}
+    }
+    decorateContacts();
+    refreshDueStatuses();
+    setInterval(refreshDueStatuses, 60 * 1000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshDueStatuses(); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();

@@ -257,14 +257,18 @@ function addContact(x) {
       </label>
 
       <label>Amazon Profile Link
-        <input
-          name="amazonProfileUrl"
-          type="url"
-          inputmode="url"
-          placeholder="https://www.amazon.in/gp/profile/..."
-          value="${esc(x.amazonProfileUrl || x.amazonProfile || "")}" 
-        >
-        <small class="muted">Paste the contact’s public Amazon profile URL to open their public reviews.</small>
+        <div class="amazon-profile-input-row">
+          <input
+            name="amazonProfileUrl"
+            id="amazonProfileUrlInput"
+            type="url"
+            inputmode="url"
+            placeholder="https://amzn.in/d/... or https://www.amazon.in/gp/profile/..."
+            value="${esc(x.amazonProfileUrl || x.amazonProfile || "")}" 
+          >
+          <button class="mini amazon-copy-icon" type="button" onclick="copyAmazonProfileInput()" aria-label="Copy Amazon profile link" title="Copy link">📋</button>
+        </div>
+        <small class="muted">Paste the contact’s original public Amazon profile link, including amzn.in short links. Use the copy icon to copy the link in this field.</small>
       </label>
 
       <label>Category
@@ -286,8 +290,11 @@ function addContact(x) {
       if (obj.amazonProfileUrl) {
         try {
           const profileUrl = new URL(obj.amazonProfileUrl);
-          if (profileUrl.protocol !== "https:" || !/(^|\.)amazon\.(in|com|co\.uk|ca|com\.au|de|fr|it|es|co\.jp|com\.mx|com\.br|nl|sg|ae|sa|se|pl|tr)$/i.test(profileUrl.hostname)) {
-            alert("Please enter a valid HTTPS Amazon profile URL (for example, https://www.amazon.in/gp/profile/...).");
+          const host = profileUrl.hostname.toLowerCase();
+          const isAmazonHost = /(^|\.)amazon\.(in|com|co\.uk|ca|com\.au|de|fr|it|es|co\.jp|com\.mx|com\.br|nl|sg|ae|sa|se|pl|tr)$/i.test(host);
+          const isAmazonShortHost = /(^|\.)(amzn\.in|amzn\.to)$/i.test(host);
+          if (profileUrl.protocol !== "https:" || (!isAmazonHost && !isAmazonShortHost)) {
+            alert("Please enter an HTTPS Amazon profile link. Amazon short links such as https://amzn.in/d/... are also accepted.");
             return;
           }
         } catch (_) {
@@ -490,6 +497,41 @@ function bindItemActions(type) {
   });
 }
 
+async function copyAmazonProfileInput() {
+  const input = document.getElementById("amazonProfileUrlInput");
+  const url = String(input?.value || "").trim();
+  if (!url) {
+    alert("Paste an Amazon profile link first.");
+    input?.focus();
+    return;
+  }
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const field = document.createElement("textarea");
+      field.value = url;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.appendChild(field);
+      field.select();
+      const copied = document.execCommand("copy");
+      field.remove();
+      if (!copied) throw new Error("Copy unavailable");
+    }
+    const button = document.querySelector(".amazon-copy-icon");
+    if (button) {
+      const old = button.textContent;
+      button.textContent = "✓";
+      button.setAttribute("aria-label", "Link copied");
+      setTimeout(() => { if (button.isConnected) { button.textContent = old; button.setAttribute("aria-label", "Copy Amazon profile link"); } }, 1400);
+    }
+  } catch (_) {
+    window.prompt("Copy Amazon profile link:", url);
+  }
+}
+
 function renderContacts() {
   const totalContactCount = $("totalContactCount");
   if (totalContactCount) totalContactCount.textContent = state.contacts.length.toLocaleString("en-IN");
@@ -526,6 +568,7 @@ function renderContacts() {
           <p>WhatsApp: ${esc(x.phone)}</p>
           ${x.category ? `<p>${esc(x.category)}</p>` : ""}
           ${x.amazonProfileUrl || x.amazonProfile ? `<div class="amazon-profile-actions"><a class="mini amazon-profile-link" href="${esc(x.amazonProfileUrl || x.amazonProfile)}" target="_blank" rel="noopener noreferrer">View Amazon Profile ↗</a><button class="mini" type="button" data-copy-amazon="${esc(x.id)}">Copy Profile Link</button></div>` : `<p class="amazon-profile-missing">Amazon profile link not added</p>`}
+          <button class="amazon-review-card" type="button" data-amazon-reviews="${esc(x.id)}"><span class="amazon-review-icon">★</span><span class="amazon-review-copy"><strong>Amazon Reviews</strong><small>${Array.isArray(x.amazonReviewBrands) && x.amazonReviewBrands.length ? `${x.amazonReviewBrands.length} saved brand${x.amazonReviewBrands.length === 1 ? "" : "s"}` : (x.amazonReviewStatus === "blocked" ? "Unable to refresh — Amazon access blocked" : "View detected review brands")}</small></span><span class="amazon-review-arrow">›</span></button>
           <div class="actions contact-actions">
             <button class="mini" data-timeline="${x.id}">Timeline</button>
             <button class="mini" data-edit="${x.id}">Edit</button>

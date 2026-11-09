@@ -26,7 +26,21 @@ function normalizeMatchText(value) {
 function normalizeMatchPhone(value) {
   return String(value ?? "").replace(/\D/g, "").replace(/^0+/, "");
 }
+function isReshareAllowed(contactId, productId) {
+  const events = (state.activity || []).filter(a =>
+    a && a.type === "deal_dhamaka_reshare_override" &&
+    String(a.contactId) === String(contactId) &&
+    String(a.productId) === String(productId)
+  ).sort((a,b) => Number(a.time || 0) - Number(b.time || 0));
+  return events.length ? events[events.length - 1].enabled === true : false;
+}
+function setReshareAllowed(contactId, productId, enabled) {
+  state.activity.push({id:uid(),type:"deal_dhamaka_reshare_override",
+    contactId:String(contactId),productId:String(productId),enabled:!!enabled,time:Date.now()});
+  save();
+}
 function hasSharedPair(contactId, productId) {
+  if (isReshareAllowed(contactId, productId)) return false;
   const contact = state.contacts.find(c => String(c.id) === String(contactId));
   const product = state.products.find(p => String(p.id) === String(productId));
   if (!contact || !product) return false;
@@ -187,6 +201,8 @@ function showPage(name) {
   if (name === "send") renderSendLists();
   if (name === "history") renderHistory();
   if (name === "tracking") renderTracking();
+  if (name === "payments" && typeof window.renderPayments === "function") window.renderPayments();
+  if (name === "payments" && typeof window.renderPayments === "function") window.renderPayments();
   if (name === "refunds" && typeof window.renderRefunds === "function") window.renderRefunds();
 
   updateStats();
@@ -256,6 +272,11 @@ function addContact(x) {
         >
       </label>
 
+      <label>UPI ID
+        <input name="upiId" inputmode="email" placeholder="name@upi" value="${esc(x.upiId || "")}">
+        <small class="muted">Used to prefill payment requests from the Payments tab. Verify the UPI ID before paying.</small>
+      </label>
+
       <label>Amazon Profile Link
         <div class="amazon-profile-input-row">
           <input
@@ -284,7 +305,8 @@ function addContact(x) {
         name: f.get("name").trim(),
         phone: f.get("phone").replace(/\D/g, ""),
         category: f.get("category").trim() || "General",
-        amazonProfileUrl: String(f.get("amazonProfileUrl") || "").trim()
+        amazonProfileUrl: String(f.get("amazonProfileUrl") || "").trim(),
+        upiId: String(f.get("upiId") || "").trim()
       };
 
       if (obj.amazonProfileUrl) {
@@ -332,8 +354,8 @@ function addProduct(x) {
 
   x.brand = x.brand || x.name || "";
   const existingLinks = Array.isArray(x.links) && x.links.length
-    ? x.links.map(v => ({ productType: v.productType || x.productType || "", price: v.price ?? "", link: v.link || "" }))
-    : [{ productType: x.productType || "", price: x.price || "", link: x.link || "" }];
+    ? x.links.map(v => ({ productType: v.productType || x.productType || "", description: v.description || "", price: v.price ?? "", link: v.link || "" }))
+    : [{ productType: x.productType || "", description: x.description || "", price: x.price || "", link: x.link || "" }];
 
   const linkRows = rows => rows.map((v, i) => `
     <div class="product-link-row" data-product-link-row>
@@ -347,6 +369,9 @@ function addProduct(x) {
       <label>Price (₹)
         <input name="variantPrice" inputmode="decimal" placeholder="e.g. 999" value="${esc(v.price)}">
       </label>
+      <label class="wide">Description
+        <input name="variantDescription" placeholder="Description for this link/type" value="${esc(v.description || "")}">
+      </label>
       <label class="wide">Product Link
         <input name="variantLink" type="url" required placeholder="https://..." value="${esc(v.link)}">
       </label>
@@ -358,9 +383,6 @@ function addProduct(x) {
       <div class="product-form-grid">
         <label>Brand Name
           <input name="brand" required placeholder="e.g. Nike" value="${esc(x.brand)}">
-        </label>
-        <label>Description
-          <input name="description" placeholder="Product/deal description" value="${esc(x.description || "")}">
         </label>
         <label>Platform
           <select name="platform">
@@ -397,9 +419,11 @@ function addProduct(x) {
       }
       const types = f.getAll("variantProductType");
       const prices = f.getAll("variantPrice");
+      const descriptions = f.getAll("variantDescription");
       const urls = f.getAll("variantLink");
       const links = urls.map((link, i) => ({
         productType: String(types[i] || "").trim(),
+        description: String(descriptions[i] || "").trim(),
         price: String(prices[i] || "").trim(),
         link: String(link || "").trim()
       })).filter(v => v.productType || v.price || v.link);
@@ -410,7 +434,7 @@ function addProduct(x) {
       const obj = {
         ...x, id: x.id || uid(), name: brand, brand,
         productType: primary.productType,
-        description: f.get("description").trim(),
+        description: primary.description || "",
         price: primary.price,
         platform: f.get("platform"),
         link: primary.link,
@@ -444,7 +468,7 @@ function addProduct(x) {
     const row = document.createElement("div");
     row.className = "product-link-row";
     row.setAttribute("data-product-link-row", "");
-    row.innerHTML = `<div class="product-link-row-head"><b>Product link</b><button type="button" class="secondary small" data-remove-product-link>Remove</button></div><label>Product Type<input name="variantProductType" required placeholder="e.g. Shoes"></label><label>Price (₹)<input name="variantPrice" inputmode="decimal" placeholder="e.g. 999"></label><label class="wide">Product Link<input name="variantLink" type="url" required placeholder="https://..."></label>`;
+    row.innerHTML = `<div class="product-link-row-head"><b>Product link</b><button type="button" class="secondary small" data-remove-product-link>Remove</button></div><label>Product Type<input name="variantProductType" required placeholder="e.g. Shoes"></label><label>Price (₹)<input name="variantPrice" inputmode="decimal" placeholder="e.g. 999"></label><label class="wide">Description<input name="variantDescription" placeholder="Description for this link/type"></label><label class="wide">Product Link<input name="variantLink" type="url" required placeholder="https://..."></label>`;
     rowsEl.appendChild(row); refreshRemoveButtons();
     row.querySelector('input[name="variantProductType"]').focus();
   });
@@ -779,12 +803,25 @@ function renderProducts() {
 
               <p>
                 ${esc(product.platform)}
-                ${product.price
-                  ? " · ₹" + esc(product.price)
-                  : ""}
+                ${(() => {
+                  const priceVariants = Array.isArray(product.links) && product.links.length
+                    ? product.links
+                    : [{ price: product.price }];
+                  const totalVariantPrice = priceVariants.reduce((sum, variant) => {
+                    const amount = Number(String(variant.price ?? "").replace(/[,₹\s]/g, ""));
+                    return sum + (Number.isFinite(amount) && amount > 0 ? amount : 0);
+                  }, 0);
+                  const pricedVariants = priceVariants.filter(variant => {
+                    const amount = Number(String(variant.price ?? "").replace(/[,₹\s]/g, ""));
+                    return Number.isFinite(amount) && amount > 0;
+                  }).length;
+                  return pricedVariants > 1
+                    ? " · Total of " + pricedVariants + " options: ₹" + totalVariantPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })
+                    : (pricedVariants === 1 ? " · ₹" + totalVariantPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "");
+                })()}
               </p>
 
-              ${(Array.isArray(product.links) && product.links.length ? product.links : [{productType: product.productType, price: product.price, link: product.link}]).map((v, i) => `<p><b>${esc(v.productType || "Product type")}</b>${v.price ? " · ₹" + esc(v.price) : ""}<br><a href="${esc(v.link || "#")}" target="_blank" rel="noopener">${esc(v.link || "No link")}</a></p>`).join("")}
+              ${(Array.isArray(product.links) && product.links.length ? product.links : [{productType: product.productType, price: product.price, link: product.link}]).map((v, i) => `<p><b>${esc(product.brand || product.name || "Brand")} - ${esc(v.productType || "Product type")}</b>${v.price ? " · ₹" + esc(v.price) : ""}${v.description ? `<br>${esc(v.description)}` : ""}<br><a href="${esc(v.link || "#")}" target="_blank" rel="noopener">${esc(v.link || "No link")}</a></p>`).join("")}
               <p><b>Deal dates:</b> ${esc(product.dealStartDate || "Not set")} → ${esc(product.dealEndDate || "No end date")}</p>
 
               <p>
@@ -1094,6 +1131,38 @@ function renderSendLists() {
       </label>
     `).join("") || '<div class="report-empty">No eligible contacts found.</div>';
 
+  let nonEligibleBox = $("sendNonEligible");
+  if (!nonEligibleBox) {
+    nonEligibleBox = document.createElement("section");
+    nonEligibleBox.id = "sendNonEligible";
+    nonEligibleBox.className = "card";
+    $("sendContacts").insertAdjacentElement("afterend", nonEligibleBox);
+  }
+  const alreadySharedContacts = state.contacts.filter(c =>
+    relevantProductIds.length &&
+    relevantProductIds.every(pid => hasSharedPair(c.id, pid)) &&
+    (c.name + " " + c.phone).toLowerCase().includes(cq)
+  );
+  nonEligibleBox.innerHTML = `
+    <h3>Previously shared / Non-eligible contacts (${alreadySharedContacts.length})</h3>
+    <p class="hint">Tick a contact to allow sharing the selected product(s) again. A new share is recorded separately and counts in all reports.</p>
+    ${alreadySharedContacts.map(c => `
+      <label class="checkrow">
+        <input type="checkbox" data-reshare-contact="${esc(c.id)}">
+        <span>${esc(c.name)}<small>${esc(c.phone)} · Already shared</small></span>
+      </label>
+    `).join("") || '<div class="report-empty">No previously shared contacts for this selection.</div>'}
+  `;
+  nonEligibleBox.querySelectorAll("[data-reshare-contact]").forEach(input => {
+    input.onchange = () => {
+      const contactId = String(input.dataset.reshareContact);
+      relevantProductIds.forEach(productId => setReshareAllowed(contactId, productId, input.checked));
+      if (input.checked) selectedContacts.add(contactId);
+      else selectedContacts.delete(contactId);
+      rebuildBatchFromSelections();
+    };
+  });
+
   document.querySelectorAll("#sendContacts [data-contact]").forEach(input => {
     input.onchange = () => {
       const id = String(input.dataset.contact);
@@ -1236,17 +1305,22 @@ function updateBatchUI() {
 }
 
 function makeMessage(c, p) {
+  const variants = Array.isArray(p.links) && p.links.length
+    ? p.links
+    : [{ productType: p.productType || "", description: p.description || "", price: p.price || "", link: p.link || "" }];
+  const linkList = variants.map((v, i) => {
+    const title = `${p.brand || p.name || "Brand"} - ${v.productType || p.productType || "Product"}`;
+    const details = [v.description || ""].filter(Boolean);
+    return `${i + 1}. ${title}${details.length ? `\n   ${details.join(" | ")}` : ""}\n   🔗 ${v.link || ""}`;
+  }).join("\n\n");
   return `🥳 Something FREE is waiting for you! 🎁
 
 Hi ${c.name} 👋
 
-🛍️ ${p.brand || p.name}
-✨ ${p.description || ""}
+👇 Available options:
+${linkList}
 
-👇 Your deal link:
-🔗 ${p.link}
-
-🛒 Place your order & enjoy your freebie! 😍
+🛒 Place your order and enjoy your deal! 😍
 
 💥 Deal Dhamaka — Happy Shopping! 🎉`;
 }
@@ -1309,6 +1383,8 @@ $("openNext").onclick = () => {
     ordered: false,
     orderedAt: ""
   });
+
+  if (isReshareAllowed(c.id, p.id)) setReshareAllowed(c.id, p.id, false);
 
   save();
 
@@ -1618,6 +1694,136 @@ const trackingFilterSearch = {
 };
 
 function renderTracking() {
+  const trackingPage = $("tracking");
+  if (trackingPage && !$("manualSharePanel")) {
+    const panel = document.createElement("section");
+    panel.id = "manualSharePanel";
+    panel.className = "card";
+    panel.innerHTML = `
+      <h3>Manual Share / Order Entry</h3>
+      <p class="hint">Select multiple contacts and products. Each selected contact-product combination will be recorded separately and included in reports.</p>
+      <div class="manual-multi-head">
+        <strong>Contacts</strong>
+        <span id="manualContactCount" class="hint">0 selected</span>
+      </div>
+      <input id="manualContactSearch" type="search" placeholder="Search contacts..." aria-label="Search contacts">
+      <div class="manual-multi-actions">
+        <button type="button" class="secondary" id="manualContactsAll">Select all</button>
+        <button type="button" class="secondary" id="manualContactsClear">Clear</button>
+      </div>
+      <div id="manualContactOptions" class="manual-multi-options" aria-label="Select multiple contacts"></div>
+
+      <div class="manual-multi-head">
+        <strong>Products</strong>
+        <span id="manualProductCount" class="hint">0 selected</span>
+      </div>
+      <input id="manualProductSearch" type="search" placeholder="Search products..." aria-label="Search products">
+      <div class="manual-multi-actions">
+        <button type="button" class="secondary" id="manualProductsAll">Select all</button>
+        <button type="button" class="secondary" id="manualProductsClear">Clear</button>
+      </div>
+      <div id="manualProductOptions" class="manual-multi-options" aria-label="Select multiple products"></div>
+      <label class="checkrow"><input type="checkbox" id="manualShareOrdered"><span>Already ordered / received</span></label>
+      <p class="hint" id="manualCombinationCount">0 share records will be created.</p>
+      <button type="button" class="primary big" id="manualShareSave">Save manual records</button>
+    `;
+    trackingPage.insertBefore(panel, trackingPage.firstChild);
+  }
+
+  const contactBox = $("manualContactOptions"), productBox = $("manualProductOptions");
+  if (contactBox && productBox) {
+    const selectedContacts = new Set(
+      [...contactBox.querySelectorAll('input:checked')].map(x => x.value)
+    );
+    const selectedProducts = new Set(
+      [...productBox.querySelectorAll('input:checked')].map(x => x.value)
+    );
+    const renderChoices = (box, items, selected, kind, query) => {
+      const q = String(query || "").trim().toLowerCase();
+      const visible = items.filter(item => {
+        const hay = kind === "contact"
+          ? `${item.name || ""} ${item.phone || ""}`
+          : `${item.brand || ""} ${item.name || ""} ${item.productType || ""}`;
+        return hay.toLowerCase().includes(q);
+      });
+      box.innerHTML = visible.length ? visible.map(item => {
+        const id = String(item.id);
+        const label = kind === "contact"
+          ? `${item.name || "Unnamed"} · ${item.phone || ""}`
+          : `${item.brand || item.name || "Product"} · ${item.name || ""}`;
+        return `<label class="manual-multi-option"><input type="checkbox" value="${esc(id)}" ${selected.has(id) ? "checked" : ""}><span>${esc(label)}</span></label>`;
+      }).join("") : '<p class="hint">No matching records.</p>';
+    };
+    renderChoices(contactBox, state.contacts, selectedContacts, "contact", $("manualContactSearch")?.value);
+    renderChoices(productBox, state.products, selectedProducts, "product", $("manualProductSearch")?.value);
+
+    const refreshManualCounts = () => {
+      const c = contactBox.querySelectorAll('input:checked').length;
+      const pr = productBox.querySelectorAll('input:checked').length;
+      $("manualContactCount").textContent = `${c} selected`;
+      $("manualProductCount").textContent = `${pr} selected`;
+      $("manualCombinationCount").textContent = `${c * pr} share record(s) will be created (${c} contacts × ${pr} products).`;
+      $("manualShareSave").disabled = !c || !pr;
+    };
+    const rerenderPreserving = () => {
+      const c = new Set([...contactBox.querySelectorAll('input:checked')].map(x=>x.value));
+      const pr = new Set([...productBox.querySelectorAll('input:checked')].map(x=>x.value));
+      renderChoices(contactBox,state.contacts,c,"contact",$("manualContactSearch").value);
+      renderChoices(productBox,state.products,pr,"product",$("manualProductSearch").value);
+      refreshManualCounts();
+    };
+    contactBox.onchange = rerenderPreserving;
+    productBox.onchange = rerenderPreserving;
+    $("manualContactSearch").oninput = rerenderPreserving;
+    $("manualProductSearch").oninput = rerenderPreserving;
+    $("manualContactsAll").onclick = () => {
+      const c = new Set([...contactBox.querySelectorAll('input')].map(x=>x.value));
+      state.contacts.forEach(x=>c.add(String(x.id)));
+      renderChoices(contactBox,state.contacts,c,"contact",$("manualContactSearch").value); refreshManualCounts();
+    };
+    $("manualContactsClear").onclick = () => { renderChoices(contactBox,state.contacts,new Set(),"contact",$("manualContactSearch").value); refreshManualCounts(); };
+    $("manualProductsAll").onclick = () => {
+      const v = new Set([...productBox.querySelectorAll('input')].map(x=>x.value));
+      state.products.forEach(x=>v.add(String(x.id)));
+      renderChoices(productBox,state.products,v,"product",$("manualProductSearch").value); refreshManualCounts();
+    };
+    $("manualProductsClear").onclick = () => { renderChoices(productBox,state.products,new Set(),"product",$("manualProductSearch").value); refreshManualCounts(); };
+
+    $("manualShareSave").onclick = () => {
+      const contactIds = [...contactBox.querySelectorAll('input:checked')].map(x=>x.value);
+      const productIds = [...productBox.querySelectorAll('input:checked')].map(x=>x.value);
+      if (!contactIds.length || !productIds.length) return alert("Select at least one contact and one product.");
+      const ordered = $("manualShareOrdered").checked;
+      const now = Date.now();
+      let created = 0;
+      contactIds.forEach(contactId => {
+        const contact = state.contacts.find(c=>String(c.id)===contactId);
+        if (!contact) return;
+        productIds.forEach(productId => {
+          const product = state.products.find(p=>String(p.id)===productId);
+          if (!product) return;
+          state.shares.push({
+            id:uid(),contactId:contact.id,contactName:contact.name,
+            phone:String(contact.phone || "").replace(/\D/g,""),
+            productId:product.id,productName:product.name,brand:product.brand,
+            productType:product.productType,platform:product.platform,
+            priceSnapshot:Number(product.price)||0,time:now,
+            message:"Manually recorded in Deal Dhamaka Agent V2",
+            status:"Manually marked as shared",ordered,
+            orderedAt:ordered?new Date(now).toISOString():""
+          });
+          created++;
+        });
+      });
+      if (!created) return alert("No records were created. Please check your selections.");
+      save();
+      alert(`${created} manual share record(s) saved${ordered ? " and marked ordered/received" : ""}.`);
+      $("manualShareOrdered").checked = false;
+      $("manualContactSearch").value = ""; $("manualProductSearch").value = "";
+      renderTracking(); renderHistory(); renderSendLists();
+    };
+    refreshManualCounts();
+  }
   // Reports use current product metadata. Deleted products are excluded from
   // live tracking and inventory reports; historical entries remain in History.
   const reportShares = state.shares.map(record => {
@@ -2281,3 +2487,20 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("./sw.js").catch(() => {})
   );
 }
+
+
+/* Refresh the in-memory app state and the currently visible page after cloud pulls.
+   Cloud writes update localStorage in this tab; the browser's native storage event
+   does not fire in the same tab, so this explicit event keeps screens current. */
+window.addEventListener("deal-dhamaka-data-updated", () => {
+  const activePage = document.querySelector(".page.active")?.id || "dashboard";
+  load();
+  if (activePage === "contacts") renderContacts();
+  else if (activePage === "products") renderProducts();
+  else if (activePage === "send") renderSendLists();
+  else if (activePage === "history") renderHistory();
+  else if (activePage === "tracking") renderTracking();
+  else if (activePage === "refunds" && typeof window.renderRefunds === "function") window.renderRefunds();
+  updateStats();
+  if (typeof window.renderPayments === "function") window.renderPayments();
+});

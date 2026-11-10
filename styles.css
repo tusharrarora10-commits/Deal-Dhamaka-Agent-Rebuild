@@ -579,3 +579,10 @@ input[type=date],input[type=datetime-local],input[type=time]{
 .payment-actions{display:flex;gap:7px;align-items:center}
 .payment-actions button{min-height:38px}
 #paymentQueue .item{margin:8px 0}
+
+.contact-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.paid-receipt-card{display:flex;flex-direction:column;gap:9px;margin:12px 0}
+.receipt-brand-line{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid rgba(160,170,185,.16)}
+.receipt-summary-line{font-size:.92em;color:var(--muted,#aeb8c8)}
+.paid-receipt-card .sectionhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.paid-receipt-card .sectionhead span{font-size:.72em;letter-spacing:.08em;color:#c7b28a}

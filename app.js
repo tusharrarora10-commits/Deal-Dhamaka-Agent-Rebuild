@@ -2474,6 +2474,29 @@ $("installBtn").onclick = async () => {
   }
 };
 
+
+function exportAllContactsExcel(){
+  const KEY="dealDhamakaAgentV2";let store={};
+  try{store=JSON.parse(localStorage.getItem(KEY)||"{}")||{};}catch(e){}
+  const contacts=Array.isArray(store.contacts)?store.contacts:[];
+  if(!contacts.length){alert("No contacts available to export.");return;}
+  const preferred=["name","phone","upiId","category","amazonProfileUrl","amazonProfile"];
+  const keys=[...new Set(contacts.flatMap(c=>Object.keys(c||{})))];
+  const ordered=[...preferred.filter(k=>keys.includes(k)),...keys.filter(k=>!preferred.includes(k)).sort()];
+  const labels={name:"Contact Name",phone:"WhatsApp Number",upiId:"UPI ID",category:"Category",amazonProfileUrl:"Amazon Profile Link",amazonProfile:"Amazon Profile"};
+  const matrix=[[...ordered.map(k=>labels[k]||k)],...contacts.map(c=>ordered.map(k=>{const v=c?.[k];return v==null?"":typeof v==="object"?JSON.stringify(v):v;}))];
+  if(window.XLSX){
+    const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(matrix);
+    ws["!cols"]=ordered.map(k=>({wch:Math.min(42,Math.max(16,(labels[k]||k).length+4))}));
+    XLSX.utils.book_append_sheet(wb,ws,"Contacts");XLSX.writeFile(wb,"Deals-by-TA-Contacts.xlsx");
+  }else{
+    const csv=matrix.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");
+    a.href=url;a.download="Deals-by-TA-Contacts.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+}
+document.addEventListener("DOMContentLoaded",()=>{const b=document.getElementById("exportContactsExcel");if(b)b.addEventListener("click",exportAllContactsExcel);});
+
 /* =========================
    INITIALIZATION
 ========================= */

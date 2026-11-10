@@ -51,7 +51,7 @@ function render(){
  const groups=receiptGroups();
  let receiptBox=$("paymentReceipts");
  if(!receiptBox){receiptBox=document.createElement("div");receiptBox.id="paymentReceipts";$("paymentQueue").after(receiptBox);}
- receiptBox.innerHTML=groups.length?'<h3>Paid receipts — share on WhatsApp</h3>'+groups.map(g=>`<div class="item"><b>${esc(g.contact.name)}</b> · ${g.items.length} brand(s) · ${money(g.items.reduce((s,x)=>s+Number(x.amount||0),0))}<br><button class="secondary" type="button" data-receipt="${esc(g.contact.id)}">Prepare receipt & share</button></div>`).join(""):'';
+ receiptBox.innerHTML=groups.length?'<h3>Paid receipts — latest and history</h3>'+groups.map((g,i)=>{const calc=paymentBreakdown(g.items),dt=new Date(g.paidAt||g.items[0]?.paidAt||Date.now()),isLatest=groups.findIndex(x=>String(x.contact.id)===String(g.contact.id))===i;const stamp=dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})+" · "+dt.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});const brands=g.items.map(x=>`<div class="receipt-brand-line"><span>${esc(x.brandName||x.productName||"Brand")}</span><b>${money(x.amount)}</b></div>`).join("");return `<div class="item paid-receipt-card"><div class="sectionhead"><b>${esc(g.contact.name)}</b><span>${isLatest?"LATEST PAYMENT":"PREVIOUS RECEIPT"}</span></div><small>${stamp}</small>${brands}<div class="receipt-summary-line">Brand count: ${calc.brandCount} · Total: ${money(calc.gross)}</div><div class="receipt-summary-line">Campaign support Charges: −${money(calc.charges)} · <b>Net paid: ${money(calc.net)}</b></div><button class="secondary" type="button" data-receipt="${esc(g.batchKey)}">${isLatest?"Share latest receipt":"View / Share receipt"}</button></div>`;}).join(""):'';
  receiptBox.querySelectorAll("[data-receipt]").forEach(e=>e.onclick=()=>shareReceipt(e.dataset.receipt));
 }
 function pay(ids, provider="cred"){
@@ -77,7 +77,8 @@ function pay(ids, provider="cred"){
 }
 function markPaid(ids){
  if(!confirm("Mark these entries paid only after confirming success in your bank/UPI app?"))return;
- persist(rows().map(x=>ids.includes(x.id)?{...x,status:"Paid",paidAt:new Date().toISOString()}:x));
+ const batchId="receipt-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),paidAt=new Date().toISOString();
+ persist(rows().map(x=>ids.includes(x.id)?{...x,status:"Paid",paidAt,paymentBatchId:batchId}:x));
  ids.forEach(x=>selected.delete(x));render();
 }
 function importRows(records,fileName){
@@ -118,23 +119,27 @@ function exportCsv(){
 }
 
 function receiptGroups(){
- const paid=rows().filter(x=>x.status==="Paid"&&x.contactId);
- const groups=new Map();
- paid.forEach(x=>{const key=String(x.contactId);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(x);});
- return [...groups.entries()].map(([contactId,items])=>({contact:contacts().find(c=>String(c.id)===contactId),items}))
-  .filter(g=>g.contact);
+ const paid=rows().filter(x=>x.status==="Paid"&&x.contactId),groups=new Map();
+ paid.forEach(x=>{
+  const d=new Date(x.paidAt||x.importedAt||Date.now()),legacyMinute=Number.isNaN(d.getTime())?"unknown":d.toISOString().slice(0,16);
+  const batchKey=String(x.paymentBatchId||("legacy-"+x.contactId+"-"+legacyMinute)),key=String(x.contactId)+"|"+batchKey;
+  if(!groups.has(key))groups.set(key,{contactId:String(x.contactId),batchKey,items:[],paidAt:x.paidAt||x.importedAt||""});
+  const g=groups.get(key);g.items.push(x);if(String(x.paidAt||"")>String(g.paidAt||""))g.paidAt=x.paidAt;
+ });
+ return [...groups.values()].map(g=>({...g,contact:contacts().find(c=>String(c.id)===g.contactId)})).filter(g=>g.contact).sort((a,b)=>new Date(b.paidAt||0)-new Date(a.paidAt||0));
 }
 function receiptText(contact,items){
  const calc=paymentBreakdown(items),stamp=new Date();
- const date=stamp.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
- const time=stamp.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
+ const paidStamp=new Date(items[0]?.paidAt||stamp);
+ const date=paidStamp.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+ const time=paidStamp.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
  return `Deals by TA — Payment Summary\\nTo: ${contact.name||"Contact"}\\nDate: ${date} | Time: ${time}\\n${items.map(x=>`${x.brandName||x.productName||"Brand"}: ${money(x.amount)}`).join("\\n")}\\nBrand count: ${calc.brandCount}\\nTotal product amount: ${money(calc.gross)}\\nCampaign support Charges: -${money(calc.charges)}\\nNET AMOUNT PAID: ${money(calc.net)}`;
 }
-async function shareReceipt(contactId){
- const group=receiptGroups().find(g=>String(g.contact?.id)===String(contactId));
+async function shareReceipt(batchKey){
+ const group=receiptGroups().find(g=>String(g.batchKey)===String(batchKey));
  if(!group){alert("No paid entries found for this contact.");return;}
  const {contact,items}=group, total=items.reduce((s,x)=>s+Number(x.amount||0),0);
- const now=new Date();
+ const now=new Date(group.paidAt||items[0]?.paidAt||Date.now());
  const dateText=now.toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"});
  const timeText=now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
  const width=900, top=54, rowH=66, footer=470, height=top+570+items.length*rowH+footer;

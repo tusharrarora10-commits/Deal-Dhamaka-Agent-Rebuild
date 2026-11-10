@@ -60,7 +60,7 @@
 <section id="contacts" class="page">
   <div class="sectionhead">
     <div><h2>Contacts</h2><p>Names and WhatsApp numbers</p></div>
-    <button class="primary" id="addContact">＋ Add</button>
+    <div class="contact-actions"><button class="secondary" id="exportContactsExcel" type="button">Export Excel</button><button class="primary" id="addContact">＋ Add</button></div>
   </div>
   <div class="contact-total-card" aria-live="polite"><span class="contact-total-icon">♙</span><div><small>TOTAL CONTACTS</small><strong id="totalContactCount">0</strong></div><span class="contact-total-caption">Saved recipients</span></div>
   <input id="contactSearch" class="search" placeholder="Search name or number">
@@ -72,6 +72,7 @@
     <option value="shared-desc">Products shared (high to low)</option>
     <option value="shared-asc">Products shared (low to high)</option>
   </select>
+  <p class="hint">Export Excel downloads all saved contact fields, including WhatsApp number, UPI ID, Amazon profile link and category.</p>
   <div id="contactsList"></div>
 </section>
 

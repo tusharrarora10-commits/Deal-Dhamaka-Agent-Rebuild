@@ -87,6 +87,11 @@ function pay(ids, provider="cred"){
  const note=chosen.map(x=>x.brandName||x.productName||x.remarks||"Deals by TA").join(", ").slice(0,55)+(calc.charges>0?" | Campaign support":"");
  const params=new URLSearchParams({pa:upi,pn:c?.name||chosen[0].contactName,am:amount.toFixed(2),cu:"INR",tn:note});
  const uri=(provider==="other"?"upi://pay?":"credpay://upi/pay?")+params.toString();
+ // One payment action for one contact = one receipt batch. Persist this before
+ // leaving the browser for CRED, so per-row confirmation can retain the same batch.
+ const batchId="receipt-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
+ const existing=rows();
+ persist(existing.map(x=>ids.includes(x.id)&&x.status!=="Paid"?{...x,paymentBatchId:batchId,paymentInitiatedAt:new Date().toISOString(),paymentProvider:provider}:x));
  const appName=provider==="other"?"your available UPI app":"CRED";
  if(!confirm(`Payment summary for ${c?.name||chosen[0].contactName}:\nBrand count: ${calc.brandCount}\nTotal product amount: ${money(calc.gross)}\nCampaign support Charges: -${money(calc.charges)}\nNET PAY: ${money(amount)}\n\nOpen ${appName} for ${money(amount)} to ${upi}? Verify before authorising.`))return;
  // CRED is the preferred app. Keep a visible generic UPI fallback because app availability
@@ -97,7 +102,12 @@ function pay(ids, provider="cred"){
 }
 function markPaid(ids){
  if(!confirm("Mark these entries paid only after confirming success in your bank/UPI app?"))return;
- const batchId="receipt-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),paidAt=new Date().toISOString();
+ const paidAt=new Date().toISOString();
+ const selectedRows=rows().filter(x=>ids.includes(x.id));
+ const existingBatchIds=[...new Set(selectedRows.map(x=>String(x.paymentBatchId||"")).filter(Boolean))];
+ // Preserve the batch created by Pay selected with CRED. If there is no prior
+ // payment session (manual Mark paid), create one batch for this mark-paid action.
+ const batchId=existingBatchIds.length===1?existingBatchIds[0]:"receipt-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
  persist(rows().map(x=>ids.includes(x.id)?{...x,status:"Paid",paidAt,paymentBatchId:batchId,appliedCharge:rowCharge(x),paidNetAmount:Number(x.amount)-rowCharge(x)}:x));
  ids.forEach(x=>selected.delete(x));render();
 }

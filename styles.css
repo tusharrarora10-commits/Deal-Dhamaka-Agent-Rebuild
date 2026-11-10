@@ -636,3 +636,39 @@ input[type=date],input[type=datetime-local],input[type=time]{
 .payment-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
 .payment-filter-row label{display:flex;flex-direction:column;gap:6px;color:#b9c7d9;font-size:12px}
 @media(max-width:520px){.payment-filter-row{grid-template-columns:1fr}}
+
+
+/* Contacts tab: prevent stats badges from squeezing contact details on phones. */
+#contactsList .contact-list-item{
+  display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;
+  width:100%; min-width:0; box-sizing:border-box; gap:14px;
+}
+#contactsList .contact-main{
+  display:block; width:100%; max-width:100%; min-width:0; flex:0 0 auto;
+  overflow-wrap:anywhere; word-break:normal;
+}
+#contactsList .contact-main h3,
+#contactsList .contact-main p{
+  max-width:100%; overflow-wrap:anywhere; word-break:break-word; white-space:normal;
+}
+#contactsList .amazon-profile-actions,
+#contactsList .contact-actions{
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px; max-width:100%;
+}
+#contactsList .contact-product-stats{
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%;
+  max-width:100%; min-width:0; flex:0 0 auto; gap:8px; align-self:stretch; box-sizing:border-box;
+}
+#contactsList .contact-product-stats span{
+  min-width:0; width:100%; box-sizing:border-box; padding:10px 7px; overflow:hidden;
+}
+#contactsList .contact-product-stats strong{
+  max-width:100%; overflow-wrap:anywhere; text-align:center; font-size:clamp(15px,4vw,19px);
+}
+#contactsList .contact-product-stats small{ text-align:center; white-space:normal; }
+@media(min-width:700px){
+  #contactsList .contact-list-item{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,42%); align-items:start; gap:16px;
+  }
+  #contactsList .contact-product-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+}

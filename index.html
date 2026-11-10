@@ -258,11 +258,19 @@
       <div class="dash-kpi"><div class="dash-kpi-head">Net payable</div><strong id="paymentNetPayable" class="dash-kpi-value">₹0</strong></div>
     </div>
   </div>
+  <div class="card payment-charge-settings">
+    <h3>Campaign support Charges — optional</h3>
+    <label class="payment-master-choice"><input type="checkbox" id="paymentChargeMaster"><span><b>Apply Campaign support Charges</b><small>Unchecked = pay full product amount. Check to apply charges to all pending brands.</small></span></label>
+    <h4>Brand-wise selection</h4>
+    <p class="hint">Select the brands from your imported Excel file that should attract charges. Unchecked brands receive the full amount. Paid records are locked.</p>
+    <div id="paymentBrandCharges" class="payment-brand-grid"></div>
+  </div>
   <div class="card">
     <div class="sectionhead"><div><h3>3. Payment queue</h3><p class="hint">Verify the UPI ID and net payable before opening CRED. Charges per brand row: ₹1–₹500 = ₹5; ₹501–₹1,000 = ₹10; above ₹1,000 = ₹20.</p></div>
       <select id="paymentFilter" aria-label="Filter payments"><option value="all">All</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="unmatched">Unmatched</option></select>
     </div>
     <input id="paymentSearch" type="search" placeholder="Search contact or brand" aria-label="Search payment queue">
+    <div class="payment-filter-row"><label>Date <input id="paymentDateFilter" type="date"></label><label>Contact <select id="paymentContactFilter"><option value="">All contacts</option></select></label></div>
     <div id="paymentQueue"></div>
   </div>
 </section>

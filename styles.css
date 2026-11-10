@@ -672,3 +672,8 @@ input[type=date],input[type=datetime-local],input[type=time]{
   }
   #contactsList .contact-product-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
+
+/* Payment queue bulk actions */
+.payment-bulk-actions{display:grid;grid-template-columns:1fr;gap:9px;margin:14px 0 16px;width:100%}
+.payment-bulk-actions .full{width:100%;min-width:0}
+@media(min-width:560px){.payment-bulk-actions{grid-template-columns:1fr 1fr}}

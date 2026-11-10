@@ -231,6 +231,9 @@ async function shareReceipt(batchKey){
  alert("Receipt image downloaded. WhatsApp opened with the summary text. Attach the downloaded PNG before sending.");
 }
 
+// Expose receipt sharing immediately so a contact timeline can share without
+// requiring the user to open the Payments tab first.
+window.sharePaymentReceipt = shareReceipt;
 window.renderPayments=render;
 document.addEventListener("DOMContentLoaded",()=>{
  if(!$("payments"))return;
@@ -241,8 +244,10 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("paymentDateFilter")?.addEventListener("change",render);
  $("paymentContactFilter")?.addEventListener("change",render);
  $("paymentChargeMaster")?.addEventListener("change",e=>{const checked=e.target.checked;persist(rows().map(x=>x.status!=="Paid"?{...x,chargeEnabled:checked}:x));render();});
+ const actionRow=document.createElement("div");actionRow.className="payment-bulk-actions";
  const b=document.createElement("button");b.id="paySelectedBtn";b.className="primary full";b.type="button";b.textContent="Pay selected with CRED (same contact)";b.addEventListener("click",()=>pay([...selected],"cred"));
- $("paymentQueue").before(b);
+ const markBtn=document.createElement("button");markBtn.id="markSelectedPaidBtn";markBtn.className="secondary full";markBtn.type="button";markBtn.textContent="Mark selected as paid";markBtn.addEventListener("click",()=>{const ids=rows().filter(x=>selected.has(x.id)&&x.status!=="Paid").map(x=>x.id);if(!ids.length){alert("Select one or more pending payment rows first.");return;}markPaid(ids);});
+ actionRow.append(b,markBtn);$("paymentQueue").before(actionRow);
  const fallback=document.createElement("p");fallback.id="credPaymentFallback";fallback.className="hint";fallback.hidden=true;$("paymentQueue").before(fallback);
  render();
 });

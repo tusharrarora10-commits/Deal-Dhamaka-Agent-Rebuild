@@ -5,6 +5,10 @@
 const DATA_KEY="dealDhamakaAgentV2", $=id=>document.getElementById(id);
 const norm=v=>String(v??"").trim().toLowerCase().replace(/\s+/g," ");
 const money=v=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:2}).format(Number(v)||0);
+// Campaign support charge is applied once per imported payment row (one brand line).
+function campaignCharge(amount){const n=Number(amount)||0;return n>=1&&n<=500?5:n>500&&n<=1000?10:n>1000?20:0;}
+function paymentBreakdown(items){const gross=items.reduce((a,x)=>a+Number(x.amount||0),0),charges=items.reduce((a,x)=>a+campaignCharge(x.amount),0);return {gross,brandCount:items.length,charges,net:gross-charges};}
+
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let selected=new Set();
 function data(){try{return JSON.parse(localStorage.getItem(DATA_KEY)||"{}")}catch(_){return {}}}
@@ -19,9 +23,12 @@ function persist(list){
 function render(){
  const all=rows(), filter=$("paymentFilter")?.value||"all", query=norm($("paymentSearch")?.value);
  const pending=all.filter(x=>x.status!=="Paid"), paid=all.filter(x=>x.status==="Paid");
- $("paymentPendingTotal").textContent=money(pending.reduce((s,x)=>s+Number(x.amount||0),0));
+ const pb=paymentBreakdown(pending), paidB=paymentBreakdown(paid);
+ $("paymentPendingTotal").textContent=money(pb.gross);
  $("paymentPendingCount").textContent=pending.length;
- $("paymentPaidTotal").textContent=money(paid.reduce((s,x)=>s+Number(x.amount||0),0));
+ $("paymentPaidTotal").textContent=money(paidB.net);
+ if($("paymentCampaignCharges"))$("paymentCampaignCharges").textContent=money(pb.charges);
+ if($("paymentNetPayable"))$("paymentNetPayable").textContent=money(pb.net);
  $("paymentUnmatchedCount").textContent=all.filter(x=>!x.contactId).length;
  const list=all.filter(x=>{
   const match=filter==="all"||(filter==="pending"&&x.status!=="Paid")||(filter==="paid"&&x.status==="Paid")||(filter==="unmatched"&&!x.contactId);
@@ -31,7 +38,7 @@ function render(){
  <div class="item payment-row">
   <label style="display:flex;gap:10px;align-items:flex-start">
    <input type="checkbox" data-pay-select="${esc(x.id)}" ${selected.has(x.id)?"checked":""}>
-   <span><b>${esc(x.contactName)}</b><br><small>${esc(x.brandName||x.productName||"Payment")} · ${esc(x.remarks||"")}</small><br><small>UPI: ${esc(x.upiId||"Missing — edit contact")}</small><br><b>${money(x.amount)}</b> · ${esc(x.status)}</span>
+   <span><b>${esc(x.contactName)}</b><br><small>${esc(x.brandName||x.productName||"Payment")} · ${esc(x.remarks||"")}</small><br><small>UPI: ${esc(x.upiId||"Missing — edit contact")}</small><br><small>Product amount: ${money(x.amount)} · Campaign support Charges: ${money(campaignCharge(x.amount))}</small><br><b>Net payable: ${money(Number(x.amount)-campaignCharge(x.amount))}</b> · ${esc(x.status)}</span>
   </label>
   <div class="payment-actions">
    ${x.status!=="Paid"?`<button class="primary" type="button" data-pay-one="${esc(x.id)}" ${!x.upiId?"disabled":""}>Pay with CRED</button><button class="secondary" type="button" data-pay-other="${esc(x.id)}" ${!x.upiId?"disabled":""}>Other UPI</button><button class="secondary" type="button" data-mark-paid="${esc(x.id)}">Mark paid</button>`:`<small>Paid ${esc(x.paidAt||"")}</small>`}
@@ -54,13 +61,14 @@ function pay(ids, provider="cred"){
  if(contactIds.length!==1){alert("Select payment rows for one contact at a time.");return;}
  const c=contacts().find(x=>String(x.id)===contactIds[0]), upi=String(c?.upiId||chosen[0].upiId||"").trim();
  if(!upi||! /^[^@\s]+@[^@\s]+$/.test(upi)){alert("Add a valid UPI ID to this contact first.");return;}
- const amount=chosen.reduce((s,x)=>s+Number(x.amount||0),0);
- if(!(amount>0)){alert("Payment amount must be greater than zero.");return;}
- const note=chosen.map(x=>x.brandName||x.productName||x.remarks||"Deal Dhamaka payment").join(", ").slice(0,80);
+ const calc=paymentBreakdown(chosen), amount=calc.net;
+ if(!(calc.gross>0)){alert("Payment amount must be greater than zero.");return;}
+ if(!(amount>0)){alert("Campaign support Charges equal or exceed the selected product amount. Adjust the imported amounts before initiating payment.");return;}
+ const note=chosen.map(x=>x.brandName||x.productName||x.remarks||"Deals by TA").join(", ").slice(0,55)+" | Campaign support";
  const params=new URLSearchParams({pa:upi,pn:c?.name||chosen[0].contactName,am:amount.toFixed(2),cu:"INR",tn:note});
  const uri=(provider==="other"?"upi://pay?":"credpay://upi/pay?")+params.toString();
  const appName=provider==="other"?"your available UPI app":"CRED";
- if(!confirm(`Open ${appName} for ${money(amount)} to ${c?.name||chosen[0].contactName} (${upi})? Verify the recipient, UPI ID and amount before authorising.`))return;
+ if(!confirm(`Payment summary for ${c?.name||chosen[0].contactName}:\\nBrand count: ${calc.brandCount}\\nTotal product amount: ${money(calc.gross)}\\nCampaign support Charges: -${money(calc.charges)}\\nNET PAY: ${money(amount)}\\n\\nOpen ${appName} for ${money(amount)} to ${upi}? Verify before authorising.`))return;
  // CRED is the preferred app. Keep a visible generic UPI fallback because app availability
  // and custom-scheme handling depend on the device/browser.
  const fallback=$("credPaymentFallback");
@@ -104,8 +112,8 @@ async function importFile(){
  }catch(e){$("paymentImportStatus").textContent="Import failed: "+e.message;}
 }
 function exportCsv(){
- const head=["Contact Name","UPI ID","Brand Name","Pending Amount","Remarks","Status","Paid At","Imported At"];
- const lines=[head,...rows().map(x=>[x.contactName,(contacts().find(c=>String(c.id)===String(x.contactId))||{}).phone||"",x.upiId,x.brandName||x.productName||"",x.amount,x.remarks,x.status,x.paidAt,x.importedAt])].map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ const head=["Contact Name","WhatsApp Number","UPI ID","Brand Name","Total Product Amount","Campaign support Charges","Net Payable","Remarks","Status","Paid At","Imported At"];
+ const lines=[head,...rows().map(x=>[x.contactName,(contacts().find(c=>String(c.id)===String(x.contactId))||{}).phone||"",x.upiId,x.brandName||x.productName||"",x.amount,campaignCharge(x.amount),Number(x.amount)-campaignCharge(x.amount),x.remarks,x.status,x.paidAt,x.importedAt])].map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
  const a=document.createElement("a"),u=URL.createObjectURL(new Blob([lines],{type:"text/csv;charset=utf-8"}));a.href=u;a.download="deal-dhamaka-payment-register.csv";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
 
@@ -117,11 +125,10 @@ function receiptGroups(){
   .filter(g=>g.contact);
 }
 function receiptText(contact,items){
- const total=items.reduce((s,x)=>s+Number(x.amount||0),0);
- const stamp=new Date();
+ const calc=paymentBreakdown(items),stamp=new Date();
  const date=stamp.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
  const time=stamp.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
- return `Deals by TA — Payment Summary\nTo: ${contact.name||"Contact"}\nDate: ${date} | Time: ${time}\n${items.map(x=>`${x.brandName||x.productName||"Brand"}: ${money(x.amount)}`).join("\n")}\nTotal Amount: ${money(total)}`;
+ return `Deals by TA — Payment Summary\\nTo: ${contact.name||"Contact"}\\nDate: ${date} | Time: ${time}\\n${items.map(x=>`${x.brandName||x.productName||"Brand"}: ${money(x.amount)}`).join("\\n")}\\nBrand count: ${calc.brandCount}\\nTotal product amount: ${money(calc.gross)}\\nCampaign support Charges: -${money(calc.charges)}\\nNET AMOUNT PAID: ${money(calc.net)}`;
 }
 async function shareReceipt(contactId){
  const group=receiptGroups().find(g=>String(g.contact?.id)===String(contactId));
@@ -130,7 +137,7 @@ async function shareReceipt(contactId){
  const now=new Date();
  const dateText=now.toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"});
  const timeText=now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
- const width=900, top=54, rowH=66, footer=330, height=top+470+items.length*rowH+footer;
+ const width=900, top=54, rowH=66, footer=470, height=top+570+items.length*rowH+footer;
  const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
  const ctx=canvas.getContext("2d");
  if(!ctx){alert("Could not prepare receipt image on this device.");return;}
@@ -162,8 +169,14 @@ async function shareReceipt(contactId){
   ctx.fillText(brand,76,y);ctx.textAlign="right";ctx.fillText(money(item.amount),width-76,y);ctx.textAlign="left";
   y+=18;ctx.strokeStyle="#303740";ctx.beginPath();ctx.moveTo(76,y);ctx.lineTo(width-76,y);ctx.stroke();
  }
- y+=55;ctx.fillStyle="#c7b28a";ctx.font="bold 23px Arial";ctx.fillText("TOTAL AMOUNT",76,y);
- ctx.textAlign="right";ctx.fillStyle="#f5f0e6";ctx.font="bold 34px Arial";ctx.fillText(money(total),width-76,y+3);ctx.textAlign="left";
+ const calc=paymentBreakdown(items);
+ y+=40;ctx.fillStyle="#bba982";ctx.font="bold 18px Arial";ctx.fillText(`BRAND COUNT: ${calc.brandCount}`,76,y);
+ y+=48;ctx.fillStyle="#f0ece4";ctx.font="22px Arial";ctx.fillText("TOTAL PRODUCT AMOUNT",76,y);
+ ctx.textAlign="right";ctx.fillText(money(calc.gross),width-76,y);ctx.textAlign="left";
+ y+=46;ctx.fillStyle="#c7b28a";ctx.font="22px Arial";ctx.fillText("Campaign support Charges",76,y);
+ ctx.textAlign="right";ctx.fillText("− "+money(calc.charges),width-76,y);ctx.textAlign="left";
+ y+=50;ctx.fillStyle="#c7b28a";ctx.font="bold 23px Arial";ctx.fillText("NET AMOUNT PAID",76,y);
+ ctx.textAlign="right";ctx.fillStyle="#f5f0e6";ctx.font="bold 34px Arial";ctx.fillText(money(calc.net),width-76,y+3);ctx.textAlign="left";
  y+=76;ctx.strokeStyle="#625744";ctx.beginPath();ctx.moveTo(76,y);ctx.lineTo(width-76,y);ctx.stroke();
  y+=48;ctx.fillStyle="#aaa69d";ctx.font="19px Arial";ctx.fillText("Thank you for your trust.",76,y);
  ctx.textAlign="right";ctx.fillStyle="#c7b28a";ctx.font="italic 21px Georgia, serif";ctx.fillText("Deals by TA",width-76,y);ctx.textAlign="left";

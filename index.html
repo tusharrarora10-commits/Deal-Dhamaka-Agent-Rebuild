@@ -234,7 +234,7 @@
 
 <section id="payments" class="page">
   <div class="sectionhead">
-    <div><h2>Payments</h2><p>Import pending payments from Excel and pay using saved contact UPI IDs</p></div>
+    <div><h2>Payments</h2><p>Import pending payments from Excel and pay using saved contact UPI IDs. Campaign support Charges are deducted once per brand/payment row.</p></div>
   </div>
   <div class="card">
     <h3>1. Import Excel payment sheet</h3>
@@ -253,10 +253,12 @@
       <div class="dash-kpi"><div class="dash-kpi-head">Pending entries</div><strong id="paymentPendingCount" class="dash-kpi-value">0</strong></div>
       <div class="dash-kpi"><div class="dash-kpi-head">Paid amount</div><strong id="paymentPaidTotal" class="dash-kpi-value">₹0</strong></div>
       <div class="dash-kpi"><div class="dash-kpi-head">Unmatched entries</div><strong id="paymentUnmatchedCount" class="dash-kpi-value">0</strong></div>
+      <div class="dash-kpi"><div class="dash-kpi-head">Campaign support Charges</div><strong id="paymentCampaignCharges" class="dash-kpi-value">₹0</strong></div>
+      <div class="dash-kpi"><div class="dash-kpi-head">Net payable</div><strong id="paymentNetPayable" class="dash-kpi-value">₹0</strong></div>
     </div>
   </div>
   <div class="card">
-    <div class="sectionhead"><div><h3>3. Payment queue</h3><p class="hint">Verify the UPI ID and amount before opening your UPI app.</p></div>
+    <div class="sectionhead"><div><h3>3. Payment queue</h3><p class="hint">Verify the UPI ID and net payable before opening CRED. Charges per brand row: ₹1–₹500 = ₹5; ₹501–₹1,000 = ₹10; above ₹1,000 = ₹20.</p></div>
       <select id="paymentFilter" aria-label="Filter payments"><option value="all">All</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="unmatched">Unmatched</option></select>
     </div>
     <input id="paymentSearch" type="search" placeholder="Search contact or brand" aria-label="Search payment queue">

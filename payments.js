@@ -34,11 +34,12 @@ function render(){
    <span><b>${esc(x.contactName)}</b><br><small>${esc(x.brandName||x.productName||"Payment")} · ${esc(x.remarks||"")}</small><br><small>UPI: ${esc(x.upiId||"Missing — edit contact")}</small><br><b>${money(x.amount)}</b> · ${esc(x.status)}</span>
   </label>
   <div class="payment-actions">
-   ${x.status!=="Paid"?`<button class="primary" type="button" data-pay-one="${esc(x.id)}" ${!x.upiId?"disabled":""}>Pay</button><button class="secondary" type="button" data-mark-paid="${esc(x.id)}">Mark paid</button>`:`<small>Paid ${esc(x.paidAt||"")}</small>`}
+   ${x.status!=="Paid"?`<button class="primary" type="button" data-pay-one="${esc(x.id)}" ${!x.upiId?"disabled":""}>Pay with CRED</button><button class="secondary" type="button" data-pay-other="${esc(x.id)}" ${!x.upiId?"disabled":""}>Other UPI</button><button class="secondary" type="button" data-mark-paid="${esc(x.id)}">Mark paid</button>`:`<small>Paid ${esc(x.paidAt||"")}</small>`}
   </div>
  </div>`).join(""):'<p class="hint">No payment rows match this filter.</p>';
  $("paymentQueue").querySelectorAll("[data-pay-select]").forEach(e=>e.onchange=()=>{e.checked?selected.add(e.dataset.paySelect):selected.delete(e.dataset.paySelect);});
  $("paymentQueue").querySelectorAll("[data-pay-one]").forEach(e=>e.onclick=()=>pay([e.dataset.payOne]));
+ $("paymentQueue").querySelectorAll("[data-pay-other]").forEach(e=>e.onclick=()=>pay([e.dataset.payOther],"other"));
  $("paymentQueue").querySelectorAll("[data-mark-paid]").forEach(e=>e.onclick=()=>markPaid([e.dataset.markPaid]));
  const groups=receiptGroups();
  let receiptBox=$("paymentReceipts");
@@ -46,7 +47,7 @@ function render(){
  receiptBox.innerHTML=groups.length?'<h3>Paid receipts — share on WhatsApp</h3>'+groups.map(g=>`<div class="item"><b>${esc(g.contact.name)}</b> · ${g.items.length} brand(s) · ${money(g.items.reduce((s,x)=>s+Number(x.amount||0),0))}<br><button class="secondary" type="button" data-receipt="${esc(g.contact.id)}">Prepare receipt & share</button></div>`).join(""):'';
  receiptBox.querySelectorAll("[data-receipt]").forEach(e=>e.onclick=()=>shareReceipt(e.dataset.receipt));
 }
-function pay(ids){
+function pay(ids, provider="cred"){
  const chosen=rows().filter(x=>ids.includes(x.id)&&x.status!=="Paid"); if(!chosen.length)return;
  if(chosen.some(x=>!x.contactId)){alert("Match this payment to a saved contact before paying.");return;}
  const contactIds=[...new Set(chosen.map(x=>String(x.contactId)))];
@@ -56,8 +57,14 @@ function pay(ids){
  const amount=chosen.reduce((s,x)=>s+Number(x.amount||0),0);
  if(!(amount>0)){alert("Payment amount must be greater than zero.");return;}
  const note=chosen.map(x=>x.brandName||x.productName||x.remarks||"Deal Dhamaka payment").join(", ").slice(0,80);
- const uri="upi://pay?"+new URLSearchParams({pa:upi,pn:c?.name||chosen[0].contactName,am:amount.toFixed(2),cu:"INR",tn:note});
- if(!confirm(`Open your UPI app for ${money(amount)} to ${c?.name||chosen[0].contactName} (${upi})? Verify recipient and amount in the UPI app before authorising.`))return;
+ const params=new URLSearchParams({pa:upi,pn:c?.name||chosen[0].contactName,am:amount.toFixed(2),cu:"INR",tn:note});
+ const uri=(provider==="other"?"upi://pay?":"credpay://upi/pay?")+params.toString();
+ const appName=provider==="other"?"your available UPI app":"CRED";
+ if(!confirm(`Open ${appName} for ${money(amount)} to ${c?.name||chosen[0].contactName} (${upi})? Verify the recipient, UPI ID and amount before authorising.`))return;
+ // CRED is the preferred app. Keep a visible generic UPI fallback because app availability
+ // and custom-scheme handling depend on the device/browser.
+ const fallback=$("credPaymentFallback");
+ if(fallback){fallback.hidden=false;fallback.innerHTML='If CRED does not open, use <button type="button" class="secondary" id="openOtherUpi">Open another UPI app</button>.';const fb=$("openOtherUpi");if(fb)fb.onclick=()=>{location.href="upi://pay?"+params.toString();};}
  location.href=uri;
 }
 function markPaid(ids){
@@ -123,7 +130,7 @@ async function shareReceipt(contactId){
  const now=new Date();
  const dateText=now.toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"});
  const timeText=now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
- const width=900, top=54, rowH=66, footer=230, height=top+430+items.length*rowH+footer;
+ const width=900, top=54, rowH=66, footer=330, height=top+470+items.length*rowH+footer;
  const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;
  const ctx=canvas.getContext("2d");
  if(!ctx){alert("Could not prepare receipt image on this device.");return;}
@@ -135,6 +142,8 @@ async function shareReceipt(contactId){
  ctx.strokeStyle="#8d7957";ctx.lineWidth=2;ctx.stroke();
  // Slim accent rule and editorial heading.
  ctx.fillStyle="#c7b28a";ctx.fillRect(76,82,74,4);
+ // Fine inner accent for a more polished, restrained luxury finish.
+ ctx.strokeStyle="rgba(199,178,138,.18)";ctx.lineWidth=1;roundRect(49,49,width-98,height-98,18);ctx.stroke();
  ctx.fillStyle="#f2eee6";ctx.font="600 43px Georgia, 'Times New Roman', serif";ctx.fillText("Deals by TA",76,151);
  ctx.fillStyle="#c7b28a";ctx.font="600 20px Arial, sans-serif";ctx.letterSpacing="3px";ctx.fillText("PAYMENT SUMMARY",76,194);ctx.letterSpacing="0px";
  ctx.fillStyle="#eee9df";ctx.font="600 30px Arial, sans-serif";ctx.fillText(String(contact.name||"Contact").slice(0,34),76,270);
@@ -156,8 +165,9 @@ async function shareReceipt(contactId){
  y+=55;ctx.fillStyle="#c7b28a";ctx.font="bold 23px Arial";ctx.fillText("TOTAL AMOUNT",76,y);
  ctx.textAlign="right";ctx.fillStyle="#f5f0e6";ctx.font="bold 34px Arial";ctx.fillText(money(total),width-76,y+3);ctx.textAlign="left";
  y+=76;ctx.strokeStyle="#625744";ctx.beginPath();ctx.moveTo(76,y);ctx.lineTo(width-76,y);ctx.stroke();
- y+=48;ctx.fillStyle="#aaa69d";ctx.font="19px Arial";ctx.fillText("Thank you.",76,y);
+ y+=48;ctx.fillStyle="#aaa69d";ctx.font="19px Arial";ctx.fillText("Thank you for your trust.",76,y);
  ctx.textAlign="right";ctx.fillStyle="#c7b28a";ctx.font="italic 21px Georgia, serif";ctx.fillText("Deals by TA",width-76,y);ctx.textAlign="left";
+ y+=40;ctx.fillStyle="#777d83";ctx.font="15px Arial";ctx.fillText("A payment summary prepared for your records",76,y);
  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
  if(!blob){alert("Could not prepare receipt image on this device.");return;}
  const safeName=String(contact.name||"contact").replace(/[^a-z0-9]+/gi,"-");
@@ -180,8 +190,10 @@ document.addEventListener("DOMContentLoaded",()=>{
  $("paymentExportBtn").addEventListener("click",exportCsv);
  $("paymentFilter").addEventListener("change",render);
  $("paymentSearch").addEventListener("input",render);
- const b=document.createElement("button");b.id="paySelectedBtn";b.className="primary full";b.type="button";b.textContent="Pay selected together (same contact)";b.addEventListener("click",()=>pay([...selected]));
- $("paymentQueue").before(b);render();
+ const b=document.createElement("button");b.id="paySelectedBtn";b.className="primary full";b.type="button";b.textContent="Pay selected with CRED (same contact)";b.addEventListener("click",()=>pay([...selected],"cred"));
+ $("paymentQueue").before(b);
+ const fallback=document.createElement("p");fallback.id="credPaymentFallback";fallback.className="hint";fallback.hidden=true;$("paymentQueue").before(fallback);
+ render();
 });
 window.addEventListener("deal-dhamaka-data-updated",render);
 })();

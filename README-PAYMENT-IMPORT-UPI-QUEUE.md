@@ -1,34 +1,25 @@
-# Deal Dhamaka Agent V2 — Excel Payment Import & UPI Queue
+# Deal Dhamaka Agent V2 — Brand Payment Import & WhatsApp Receipts
 
-## What's included
-- New **Payments** tab.
-- Import `.xlsx`, `.xls`, or `.csv` with columns:
-  - `Contact Name` (required; exact saved contact name match)
-  - `Pending Amount` (required, numeric INR)
-  - `Product Name` (optional)
-  - `Remarks` (optional)
-- Add a **UPI ID** to each contact in Contacts → Edit Contact.
-- Queue entries show matched contact, saved UPI ID, product, amount and status.
-- Open a UPI payment intent with payee UPI ID, payee name, amount, INR and product/remarks.
-- Mark paid only after verifying successful payment in the bank/UPI app.
-- Export payment register as CSV.
+## Excel import columns
+Required:
+- `Contact Name` — matched to the saved contact name
+- `Brand Name` — appears on the payment register and receipt
+- `Pending Amount` — numeric amount in INR
 
-## Important payment safety
-This feature does not debit an account or verify settlement. It opens a standard `upi://pay` intent; iOS/Android may offer a compatible UPI app (including CRED if installed and registered for the intent), but the app cannot force CRED specifically. Verify the payee UPI ID and amount on the payment app's confirmation screen. Never store bank credentials, UPI PINs or OTPs in Deal Dhamaka.
+Optional: `Remarks`.
 
-## Cloud / shared data
-Payment queue rows are stored as `dd_payment` entries inside the existing app `activity` array. The existing Supabase bridge serializes the activity array to `dd_activity`, so the payment register follows the current shared-cloud activity sync when that bridge is signed in and running. Existing local data is not cleared by this feature.
+The saved contact supplies the WhatsApp number and UPI ID. Add both to the contact record before paying or sharing a receipt. Name matching ignores case and repeated spaces; unmatched contacts remain visible and must be resolved before payment.
 
-## Deploy
-1. Keep an export backup of the current app first.
-2. Extract this ZIP. Upload the **contents** of `Deal-Dhamaka-Agent-V2-main` to the same GitHub/Vercel project root, replacing matching files.
-3. Commit and wait for Vercel deployment.
-4. Open the app, edit each relevant contact and save its UPI ID.
-5. Open Payments and import the Excel file. Review unmatched names and amounts before paying.
-6. Test with a small amount to a trusted recipient first.
+## Payment and receipts
+- Payment queue stores pending/paid status in the existing app activity data.
+- The UPI button opens a payment intent prefilled with the saved UPI ID, amount and brand note.
+- Mark an item paid only after checking the successful transaction in your UPI/bank app.
+- Paid entries are grouped by contact. **Prepare receipt & share** generates a PNG showing the contact, WhatsApp number, each brand and amount, and the total.
+- On supported iPhones/browsers, the native share sheet can share the PNG to WhatsApp; choose the intended contact. The app cannot silently send or force a WhatsApp recipient.
+- If image sharing is unavailable, the PNG downloads and WhatsApp opens with the text summary; attach the downloaded image manually.
 
-## Limitations
-- Contact matching is exact after trimming/case/space normalization. Unmatched names remain visible and cannot be paid until linked to a saved contact.
-- Combined payment is supported only for selected rows belonging to one contact.
-- Payment status is manually marked after the external app confirms success; automatic bank reconciliation is not available.
-- CSV export is provided for the register; Excel import supports `.xlsx`, `.xls`, and `.csv`.
+## Safety and limitations
+The app cannot debit an account, confirm settlement, or verify bank transactions. Review the UPI ID, recipient and amount inside the UPI app before authorising. Never store UPI PINs, OTPs or bank credentials in this app. CRED is available only if the device offers it as a handler for the UPI intent; the app cannot force CRED specifically.
+
+## Deployment
+Back up current app data, extract the ZIP, upload the contents of `Deal-Dhamaka-Agent-V2-main` to the existing project root, commit and wait for Vercel deployment. Test import and receipt sharing with a small test record before relying on it.

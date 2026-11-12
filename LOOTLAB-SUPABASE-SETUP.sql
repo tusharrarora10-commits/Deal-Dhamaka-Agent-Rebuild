@@ -49,3 +49,38 @@ $$;
 revoke all on function public.dd_lootlab_resolve(text) from public;
 grant execute on function public.dd_lootlab_resolve(text) to anon, authenticated;
 grant select, insert, update, delete on public.dd_lootlab_links to authenticated;
+
+
+-- LOOTLAB branded path + WhatsApp product preview metadata (safe to re-run).
+alter table public.dd_lootlab_links
+  add column if not exists product_title text,
+  add column if not exists product_image text,
+  add column if not exists product_description text;
+
+-- Public resolver used only by the short-link landing endpoint. It increments
+-- the click counter and returns only the data needed for the preview/redirect.
+create or replace function public.dd_lootlab_resolve_meta(p_slug text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare v_row record;
+begin
+  update public.dd_lootlab_links
+     set click_count = click_count + 1, last_clicked_at = now()
+   where slug = p_slug and is_active = true
+   returning label, product_title, product_image, product_description, original_url
+        into v_row;
+  if not found then return null; end if;
+  return jsonb_build_object(
+    'label', v_row.label,
+    'product_title', coalesce(nullif(v_row.product_title, ''), nullif(v_row.label, ''), 'LOOTLAB'),
+    'product_image', v_row.product_image,
+    'product_description', v_row.product_description,
+    'destination_url', v_row.original_url
+  );
+end;
+$$;
+revoke all on function public.dd_lootlab_resolve_meta(text) from public;
+grant execute on function public.dd_lootlab_resolve_meta(text) to anon, authenticated;

@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/l/:slug", "destination": "/api/lootlab?slug=:slug" }
-  ]
-}

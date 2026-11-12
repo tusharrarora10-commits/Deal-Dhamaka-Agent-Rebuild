@@ -274,40 +274,6 @@
     <div id="paymentQueue"></div>
   </div>
 </section>
-
-<section id="lootlab" class="page">
-  <div class="sectionhead">
-    <div><h2>LOOTLAB</h2><p>Affiliate link shortener · WhatsApp Channel</p></div>
-  </div>
-  <div class="card lootlab-intro">
-    <div class="lootlab-wordmark">LOOTLAB</div>
-    <p>LOOTLAB-branded short links for your affiliate products. WhatsApp previews can show the product title and image when you provide a public image URL.</p>
-    <p class="hint">Uses your existing Vercel app and Supabase shared workspace. No Cloudflare account or separate shortener service.</p>
-  </div>
-  <div class="card">
-    <h3>Create affiliate short link</h3>
-    <form id="lootlabForm">
-      <label>Brand / product name <input id="lootlabLabel" maxlength="100" placeholder="e.g. OZi va Protein"></label>
-      <label>Product title for WhatsApp preview <input id="lootlabTitle" maxlength="140" placeholder="e.g. Haute Sauce"></label>
-      <label>Product image URL for WhatsApp preview <input id="lootlabImage" type="url" maxlength="1000" placeholder="https://... (public image URL)"></label>
-      <label>Short description (optional) <input id="lootlabDescription" maxlength="200" placeholder="A short product description"></label>
-      <label>Full affiliate URL <textarea id="lootlabUrl" rows="3" required placeholder="Paste your complete affiliate link here"></textarea></label>
-      <label>Custom short name (optional) <input id="lootlabSlug" maxlength="30" placeholder="e.g. oziva-deal"></label>
-      <button class="primary full" type="submit" id="lootlabCreate">Generate short link</button>
-    </form>
-    <div id="lootlabStatus" class="hint" role="status" aria-live="polite">Sign in to Shared Cloud to create links in your workspace.</div>
-    <div id="lootlabResult" class="lootlab-result" hidden>
-      <label>Your short affiliate link <input id="lootlabShortUrl" readonly></label>
-      <div class="lootlab-actions"><button class="secondary" type="button" id="lootlabCopy">Copy link</button><button class="primary" type="button" id="lootlabShare">Share to WhatsApp</button></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="sectionhead"><div><h3>LOOTLAB link history</h3><p>Links created in your shared workspace</p></div><button class="secondary" id="lootlabRefresh" type="button">Refresh</button></div>
-    <input class="search" id="lootlabSearch" placeholder="Search brand or short link">
-    <div id="lootlabList" class="lootlab-list"><p class="hint">Sign in to view your saved affiliate links.</p></div>
-  </div>
-</section>
-
 <section id="settings" class="page">
   <div class="sectionhead">
     <div><h2>Data &amp; Settings</h2><p>Backup your local data</p></div>
@@ -336,7 +302,6 @@
   <button data-page="settings">⚙<span>Settings</span></button>
   <button data-page="tracking">📊<span>Tracking</span></button>
   <button data-page="payments">₹<span>Payments</span></button>
-  <button data-page="lootlab">↗<span>LOOTLAB</span></button>
   <button data-page="refunds">↩<span>Refunds</span></button>
 </nav>
 
@@ -368,6 +333,5 @@
 <script src="supabase-config.js"></script>
 <script src="cloud-setup.js"></script>
 <script src="payments.js"></script>
-<script src="lootlab.js"></script>
 </body>
 </html>

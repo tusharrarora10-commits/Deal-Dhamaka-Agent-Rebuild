@@ -1,7 +1,7 @@
 /* Deal Dhamaka Agent V2 — conservative offline cache.
    Dashboard visuals only; preserve app storage and all existing workflows.
    Do not delete unrelated caches on this origin during activation. */
-const CACHE = 'deal-dhamaka-v21-bulk-paid-receipt-share-20261111';
+const CACHE = 'deal-dhamaka-v22-lootlab-supabase-20261113';
 
 const ASSETS = [
   './',
@@ -23,7 +23,8 @@ const ASSETS = [
   './product-search-autocomplete.js',
   './supabase-config.js',
   './cloud-setup.js',
-  './payments.js'
+  './payments.js',
+  './lootlab.js'
 ];
 
 self.addEventListener('install', event => {

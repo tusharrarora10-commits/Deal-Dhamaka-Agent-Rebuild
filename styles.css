@@ -677,3 +677,15 @@ input[type=date],input[type=datetime-local],input[type=time]{
 .payment-bulk-actions{display:grid;grid-template-columns:1fr;gap:9px;margin:14px 0 16px;width:100%}
 .payment-bulk-actions .full{width:100%;min-width:0}
 @media(min-width:560px){.payment-bulk-actions{grid-template-columns:1fr 1fr}}
+
+
+/* LOOTLAB affiliate short-link workspace */
+.lootlab-wordmark{font-family:Georgia,serif;font-size:30px;letter-spacing:.18em;font-weight:700;color:#d7c49a;margin:2px 0 12px}
+.lootlab-intro{border:1px solid rgba(205,184,137,.45);background:linear-gradient(145deg,rgba(201,178,130,.09),rgba(18,27,43,.4))}
+.lootlab-result{margin-top:16px;padding:14px;border:1px solid rgba(116,190,153,.45);border-radius:16px;background:rgba(42,112,81,.12)}
+.lootlab-actions{display:flex;gap:10px;flex-wrap:wrap}.lootlab-actions button{flex:1;min-width:130px}
+.lootlab-list{display:grid;gap:12px;margin-top:14px}
+.lootlab-item{padding:14px;border:1px solid var(--border,#2b3b53);border-radius:16px;background:rgba(255,255,255,.025);min-width:0}
+.lootlab-item strong{display:block;overflow-wrap:anywhere}.lootlab-item small{display:block;color:var(--muted,#9eabc0);margin:6px 0;overflow-wrap:anywhere}
+.lootlab-item .lootlab-actions{margin-top:10px}
+#lootlab textarea{width:100%;box-sizing:border-box}

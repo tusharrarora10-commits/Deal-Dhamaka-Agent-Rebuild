@@ -188,11 +188,21 @@ function updateStats() {
 ========================= */
 
 function showPage(name) {
+  // Main navigation is intentionally limited to six destinations.
+  // Legacy pages remain addressable as grouped sub-pages so existing features and links keep working.
+  const aliases = { more: "tracking", finance: "payments", share: "send" };
+  name = aliases[name] || name;
+  const morePages = ["history", "tracking", "recipients", "settings"];
+  const financePages = ["payments", "refunds"];
+  const activeGroup = morePages.includes(name) ? "tracking" : (financePages.includes(name) ? "payments" : name);
+
   document.querySelectorAll(".page").forEach(x =>
     x.classList.toggle("active", x.id === name)
   );
-
   document.querySelectorAll(".tabbar button").forEach(x =>
+    x.classList.toggle("active", x.dataset.page === activeGroup)
+  );
+  document.querySelectorAll(".group-subnav button[data-page]").forEach(x =>
     x.classList.toggle("active", x.dataset.page === name)
   );
 
@@ -202,12 +212,13 @@ function showPage(name) {
   if (name === "history") renderHistory();
   if (name === "tracking") renderTracking();
   if (name === "payments" && typeof window.renderPayments === "function") window.renderPayments();
-  if (name === "payments" && typeof window.renderPayments === "function") window.renderPayments();
   if (name === "refunds" && typeof window.renderRefunds === "function") window.renderRefunds();
+  if (name === "recipients" && typeof window.renderRecipientsTab === "function") window.renderRecipientsTab();
 
   updateStats();
   window.scrollTo(0, 0);
 }
+window.showPage = showPage;
 
 document.querySelectorAll(".tabbar button,[data-page]").forEach(b =>
   b.addEventListener("click", () => showPage(b.dataset.page))

@@ -700,7 +700,7 @@ body{background:radial-gradient(ellipse at 50% -20%,#1b2940 0%,#0a1220 48%,#070c
 input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--gold)!important}
 .badge{background:#29271f!important;border:1px solid #5b4c33!important;color:#e4d0a7!important}
 .notice{background:#182b2a!important;border-color:#41685d!important;color:#a6e5ca!important}
-.tabbar{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:2px!important;padding:7px 5px calc(7px + env(safe-area-inset-bottom))!important;background:rgba(8,14,24,.97)!important;border-top:1px solid #39404b!important;box-shadow:0 -10px 30px #0007!important;backdrop-filter:blur(20px)!important}
+.tabbar{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:2px!important;padding:7px 5px calc(7px + env(safe-area-inset-bottom))!important;background:rgba(8,14,24,.97)!important;border-top:1px solid #39404b!important;box-shadow:0 -10px 30px #0007!important;backdrop-filter:blur(20px)!important}
 .tabbar button{min-width:0!important;width:100%!important;color:#9aa8bc!important;font-size:10px!important;gap:4px!important;padding:7px 2px!important}
 .tabbar button.active{color:var(--gold-soft)!important}
 .tabbar button.active span{color:var(--gold-soft)!important;font-weight:850!important}
@@ -718,3 +718,20 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--gold
 .payment-brand-choice{background:#18263a!important;border-color:#46536a!important}
 .filelabel{background:#1b2a40!important;border-color:#46536a!important}
 @media(max-width:380px){.tabbar button span{font-size:9px!important}.tabbar{padding-left:2px!important;padding-right:2px!important}.group-subnav button{padding:8px 11px;font-size:11px}}
+
+/* Seven-tab navigation and dedicated manual-entry page */
+#manualShareHost .card{margin-top:0}
+#manual .sectionhead{margin-bottom:12px}
+#manualSharePanel{border-color:#8f7954!important;background:linear-gradient(145deg,#17243a,#101a2b)!important}
+#manualSharePanel h3{color:var(--gold-soft)!important}
+.tabbar button{min-width:0!important}
+@media(max-width:380px){.tabbar button span{font-size:8px!important}.tabbar button{gap:3px!important;padding-left:0!important;padding-right:0!important}}
+
+/* More hub and secondary tool tiles */
+.more-tile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 24px}
+.more-tile-grid button{min-height:116px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:16px;border:1px solid rgba(202,174,119,.28);border-radius:16px;background:linear-gradient(145deg,#152238,#101a2b);color:#edf1f8}
+.more-tile-grid button span{font-size:22px;color:#d8be8d}
+.more-tile-grid button b{font-size:14px}
+.more-tile-grid button small{font-size:11px;line-height:1.35;color:#aebbd0}
+.more-back{margin:4px 0 14px}
+.more-back button{width:auto}

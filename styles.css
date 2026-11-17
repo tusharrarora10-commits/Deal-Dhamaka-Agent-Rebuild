@@ -735,3 +735,7 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:var(--gold
 .more-tile-grid button small{font-size:11px;line-height:1.35;color:#aebbd0}
 .more-back{margin:4px 0 14px}
 .more-back button{width:auto}
+/* Five-feature command centre refinements */
+.topbar{flex-wrap:wrap;gap:8px}.topbar>div:last-child{flex:1 1 100%;min-width:0}
+#ddUniversal:focus{outline:2px solid #c9a96e;outline-offset:1px}
+.dd-panel label{display:block;margin:8px 0;color:#d9e3f1;font-size:13px}.dd-panel label select,.dd-panel label input{display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #40516a;border-radius:8px;background:#0b1422;color:#f8fafc}

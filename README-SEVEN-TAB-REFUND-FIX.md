@@ -7,4 +7,3 @@
 - New share and manual-entry records snapshot the sum of all product-link prices.
 - Existing localStorage key and Supabase integration are unchanged.
 
-No LOOTLAB files or features are included.
